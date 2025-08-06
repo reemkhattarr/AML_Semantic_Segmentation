@@ -1,2 +1,6 @@
+<<<<<<< HEAD
 # Ignora solo il dataset LoveDA
 dataset/LoveDA/
+=======
+data/
+>>>>>>> 792ab84676cc0a42122995c758aad3869ff9b799
