@@ -1,0 +1,16 @@
+DATASET:
+  DATASET: LoveDA
+  NUM_CLASSES: 7
+  ROOT: /content/drive/MyDrive/AML_Segmentation_Project/dataset/LoveDA
+
+MODEL:
+  NAME: pidnet
+  PRETRAINED: /content/drive/MyDrive/AML_Segmentation_Project/PIDNet/pretrained_models/imagenet/PIDNet_S_ImageNet.pth.tar
+
+TRAIN:
+  BEGIN_EPOCH: 0
+  END_EPOCH: 20
+  BATCH_SIZE_PER_GPU: 4
+  IMAGE_SIZE: (512, 512)
+  LR: 0.01
+  OPTIMIZER: sgd
