@@ -1,7 +1,7 @@
 DATASET:
-  DATASET: LoveDA
+  DATASET: loveda
   NUM_CLASSES: 7
-  ROOT: /content/drive/MyDrive/AML_Segmentation_Project/dataset/LoveDA
+  ROOT: /content/drive/MyDrive/AML_Segmentation_Project/data/LoveDA
 
 MODEL:
   NAME: pidnet
