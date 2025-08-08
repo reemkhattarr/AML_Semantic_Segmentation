@@ -1,0 +1,54 @@
+experiment:
+  name: deeplabv2_loveda_rural
+  output_dir: experiments/deeplabv2_loveda_rural/
+  random_seed: 42
+
+seed: 42  # For set_seed()
+
+data:
+  root: data/LoveDA/
+  ignore_index: 255
+  train_split: Train/Rural
+  val_split: Val/Rural
+  image_dir: images_png
+  mask_dir: masks_png
+  input_size: [512, 512]
+  # Uncomment and edit to enable augmentations
+  # train_transform:
+  #   - type: RandomHorizontalFlip
+  #     prob: 0.5
+  #   - type: RandomGaussianBlur
+  #     prob: 0.5
+  #   - type: RandomBrightness
+  #     prob: 0.5
+  #     brightness: 0.2
+  train_transform: null
+  val_transform: null
+
+model:
+  architecture: deeplabv2
+  backbone: resnet101
+  pretrained: imagenet
+  num_classes: 7
+  freeze_bn: true
+
+train:
+  epochs: 20
+  batch_size: 8
+  lr: 0.01
+  weight_decay: 0.0005
+  optimizer: sgd
+  momentum: 0.9
+  lr_schedule: poly
+  power: 0.9
+  save_every: 5
+  output_dir: experiments/deeplabv2_loveda_rural/
+
+test:
+  batch_size: 4
+  metrics: [miou, latency, flops, params]
+
+# Optional: Weights & Biases tracking
+# wandb:
+#   enable: true
+#   project: loveda-segmentation
