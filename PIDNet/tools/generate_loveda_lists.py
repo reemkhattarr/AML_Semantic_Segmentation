@@ -11,8 +11,8 @@ def make_lst(split, out_path, relative_prefix, img_dir, mask_dir):
     print(f"✅ Creato {out_path} con {len(files)} elementi.")
 
 # Base path corretti
-dataset_base = "/content/drive/MyDrive/AML_Segmentation_Project/data/LoveDA"
-list_base = "/content/drive/MyDrive/AML_Segmentation_Project/PIDNet/data/list/loveda"
+dataset_base = "/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA"
+list_base = "/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/loveda"
 
 # TRAIN - Rural
 make_lst(
