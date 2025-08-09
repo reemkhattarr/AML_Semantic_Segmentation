@@ -26,6 +26,10 @@ from utils.criterion import CrossEntropy, OhemCrossEntropy, BondaryLoss
 from utils.function import train, validate
 from utils.utils import create_logger, FullModel
 
+import json
+from utils.model_measures import count_params, measure_latency, count_flops
+
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train segmentation network')
@@ -208,6 +212,87 @@ def main():
 
     torch.save(model.module.state_dict(),
             os.path.join(final_output_dir, 'final_state.pt'))
+
+    # ---------------------------
+    # MISURE: params, latency, FLOPs
+    # ---------------------------
+    try:
+        # ricreo il modello "puro" (senza wrapper FullModel / DataParallel)
+        eval_model = models.pidnet.get_seg_model(config, imgnet_pretrained=False)
+
+        # carico i pesi migliori se disponibili, altrimenti gli ultimi
+        weight_path = os.path.join(final_output_dir, 'best.pt')
+        if not os.path.isfile(weight_path):
+            weight_path = os.path.join(final_output_dir, 'final_state.pt')
+
+        raw = torch.load(weight_path, map_location='cpu')
+
+        # 1) se è un checkpoint con 'state_dict', prendilo
+        sd = raw['state_dict'] if isinstance(raw, dict) and 'state_dict' in raw else raw
+
+        # 2) rimuovi eventuale prefisso 'module.' (DataParallel)
+        sd = {k.replace('module.', ''): v for k, v in sd.items()}
+
+        # 3) se è lo state_dict di FullModel, tieni SOLO le chiavi 'model.*' e togli 'model.'
+        if any(k.startswith('model.') for k in sd.keys()):
+            sd = {k[len('model.'):]: v for k, v in sd.items() if k.startswith('model.')}
+
+        # 4) carica nel modello puro
+        eval_model.load_state_dict(sd, strict=True)
+
+
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        # usa la test size dal config: test_size = (H, W) creato sopra
+        B, C = 1, 3
+        H, W = test_size  # definita prima nel tuo script
+        input_size = (B, C, H, W)
+
+        # conta parametri (tutti, anche non addestrabili)
+        n_params, pretty_params = count_params(eval_model, trainable_only=False)
+
+        # latency (usa AMP su GPU se disponibile)
+        lat = measure_latency(
+            eval_model,
+            input_size=input_size,
+            device=device,
+            warmup=10,
+            iters=50,
+            amp=(device == "cuda")
+        )
+
+        # FLOPs (per forward single-batch)
+        gflops, pretty_flops = count_flops(eval_model, input_size=input_size, device=device)
+
+        results = {
+            "weights": os.path.basename(weight_path),
+            "input_size": list(input_size),
+            "device": device,
+            "params": {"count": int(n_params), "pretty": pretty_params},
+            "latency_ms": {"avg": lat["avg_ms"], "p50": lat["p50_ms"], "p95": lat["p95_ms"]},
+            "throughput_fps": lat["throughput_fps"],
+            "flops_g": gflops,
+            "flops_pretty": pretty_flops,
+            "amp": (device == "cuda"),
+        }
+
+        # stampa carina a log
+        logger.info("\n=== Model Metrics (post-training) ===")
+        logger.info(f"weights:    {results['weights']}")
+        logger.info(f"input:      {results['input_size']}")
+        logger.info(f"params:     {results['params']['pretty']} ({results['params']['count']})")
+        logger.info(f"latency:    avg {results['latency_ms']['avg']:.2f} ms | "
+                    f"p50 {results['latency_ms']['p50']:.2f} | p95 {results['latency_ms']['p95']:.2f}")
+        logger.info(f"throughput: {results['throughput_fps']:.2f} FPS")
+        logger.info(f"FLOPs:      {results['flops_pretty']}")
+
+        # salvataggio JSON in output dir
+        with open(os.path.join(final_output_dir, "model_metrics.json"), "w") as f:
+            json.dump(results, f, indent=2)
+        logger.info(f"Metriche salvate in {os.path.join(final_output_dir, 'model_metrics.json')}")
+
+    except Exception as e:
+        logger.error(f"[MISURE] Errore durante la misurazione: {e}")
+
 
     writer_dict['writer'].close()
     end = timeit.default_timer()
