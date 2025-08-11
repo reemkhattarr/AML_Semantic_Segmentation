@@ -1,5 +1,4 @@
 data/LoveDA/
 **/__pycache__/
 PIDNet/output/
-DeepLabV2/checkpoints/*.pth
-DeepLabV2/checkpoints/*.pth
+DeepLabV2/checkpoints/
