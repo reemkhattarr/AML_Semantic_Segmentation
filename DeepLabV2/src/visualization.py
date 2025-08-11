@@ -3,7 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from deeplabv2 import get_deeplabv2_model
-from src.dataset import LoveDADataset
+from dataset import LoveDADataset
 import numpy as np
 from typing import Optional, Tuple, List, Dict
 

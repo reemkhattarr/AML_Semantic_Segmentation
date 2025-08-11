@@ -7,7 +7,7 @@ seed: 42  # For set_seed()
 
 data:
   root: data/LoveDA/
-  ignore_index: 255
+  ignore_index: -1
   train_split: Train/Rural
   val_split: Val/Rural
   image_dir: images_png

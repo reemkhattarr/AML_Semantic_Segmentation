@@ -23,10 +23,19 @@ class LoveDADataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
+        # Load and preprocess the image
         image = Image.open(self.images[idx]).convert('RGB').resize(self.input_size)
         mask = Image.open(self.masks[idx]).resize(self.input_size, resample=Image.NEAREST)
+        
+        # Convert to numpy arrays
         image = np.asarray(image).astype(np.float32) / 255.0
         mask = np.asarray(mask).astype(np.int64)
+        
+        # Subtract 1 from the mask to make it 0-indexed
+        mask = mask - 1
+        
+        # Apply any additional transformations
         if self.transforms:
             image, mask = self.transforms(image, mask)
+        
         return image, mask
