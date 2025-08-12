@@ -9,7 +9,7 @@ from typing import Optional, Tuple, List, Dict
 
 # LoveDA 7-class color palette 
 LOVEDA_COLORMAP = np.array([
-    [0, 0, 0],        # 0: Background
+    [255, 255, 255],  # 0: Background
     [255, 0, 0],      # 1: Building
     [0, 255, 0],      # 2: Road
     [0, 0, 255],      # 3: Water
@@ -71,7 +71,10 @@ def visualize(config, checkpoint_path, split='val', output_dir='visualizations',
     dataset = LoveDADataset(
         root=config['data']['root'],
         split=split,
-        transform=config['data']['val_transform']
+        image_dir=config['data']['image_dir'],
+        mask_dir=config['data']['mask_dir'],
+        input_size=tuple(config['data']['input_size']),
+        transforms=config['data']['val_transform']
     )
     loader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=2)
 

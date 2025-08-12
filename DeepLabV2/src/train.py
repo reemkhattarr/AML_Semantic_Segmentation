@@ -41,14 +41,21 @@ def main(config_path: str = "configs/train_deeplabv2_loveda.yaml"):
     # Dataset
     train_dataset = LoveDADataset(
         root=config['data']['root'],
-        split='train',
-        transform=config['data']['train_transform']
+        split=config['data']['train_split'],
+        image_dir=config['data']['image_dir'],
+        mask_dir=config['data']['mask_dir'],
+        input_size=tuple(config['data']['input_size']),
+        transforms=None  # No augmentations for step 2a
     )
     val_dataset = LoveDADataset(
         root=config['data']['root'],
-        split='val',
-        transform=config['data']['val_transform']
+        split=config['data']['val_split'],
+        image_dir=config['data']['image_dir'],
+        mask_dir=config['data']['mask_dir'],
+        input_size=tuple(config['data']['input_size']),
+        transforms=None
     )
+    
     train_loader = DataLoader(train_dataset, batch_size=config['train']['batch_size'], shuffle=True, num_workers=4)
     val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False, num_workers=2)
 

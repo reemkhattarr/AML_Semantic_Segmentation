@@ -4,7 +4,7 @@ from PIL import Image
 import numpy as np
 
 class LoveDADataset(Dataset):
-    def __init__(self, root, split, image_dir, mask_dir, input_size=(512, 512), transforms=None):
+    def __init__(self, root, split, image_dir, mask_dir, input_size=(720, 720), transforms=None):
         self.root = root
         self.split = split  # e.g., train/rural or val/rural
         self.image_dir = image_dir
