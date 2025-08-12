@@ -2,6 +2,7 @@ import os
 from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
+import torch
 
 class LoveDADataset(Dataset):
     def __init__(self, root, split, image_dir, mask_dir, input_size=(720, 720), transforms=None):
@@ -31,8 +32,17 @@ class LoveDADataset(Dataset):
         image = np.asarray(image).astype(np.float32) / 255.0
         mask = np.asarray(mask).astype(np.int64)
         
+        # ImageNet normalization
+        mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+        std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+        image = (image - mean) / std
+        
         # Subtract 1 from the mask to make it 0-indexed
         mask = mask - 1
+        
+        # Convert to torch.Tensor and permute to (C, H, W)
+        image = torch.from_numpy(image).permute(2, 0, 1)  # (C, H, W)
+        mask = torch.from_numpy(mask).long()  # (H, W)
         
         # Apply any additional transformations
         if self.transforms:
