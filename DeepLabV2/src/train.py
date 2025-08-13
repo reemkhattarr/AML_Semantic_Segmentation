@@ -37,7 +37,8 @@ def main(config_path: str = "configs/train_deeplabv2_loveda.yaml"):
     set_seed(config['seed'])
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    logger = setup_logger()
+    os.makedirs(config['train']['output_dir'], exist_ok=True)
+    logger = setup_logger(log_file=os.path.join(config['train']['output_dir'], 'train.log'))
 
     # Dataset
     train_dataset = LoveDADataset(
@@ -147,12 +148,12 @@ def main(config_path: str = "configs/train_deeplabv2_loveda.yaml"):
         miou, per_class_iou = miou_metric.compute(return_per_class=True)
         logger.info(f"Epoch {epoch+1}: Val mIoU: {miou:.4f}")
 
-        for idx, class_iou in enumerate(per_class_iou):
-            logger.info(f"    Class {idx} IoU: {class_iou:.4f}")
-
         print(f"Val mIoU: {miou:.4f}")
         for idx, class_iou in enumerate(per_class_iou):
             print(f"    Class {idx} IoU: {class_iou:.4f}")
+            logger.info(f"    Class {idx} IoU: {class_iou:.4f}")
+
+        
 
 
         # Save best model
