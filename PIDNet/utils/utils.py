@@ -60,56 +60,61 @@ class FullModel(nn.Module):
 
   #   return torch.unsqueeze(loss,0), outputs[:-1], acc, [loss_s, loss_b]
 
-    def forward(self, inputs, labels, bd_label):
-        outputs = self.model(inputs)
-        if not isinstance(outputs, (list, tuple)):
-            outputs = [outputs]
 
-        if not self._printed_shapes:
-            try:
-                print("[PIDNet heads]", [tuple(o.shape) for o in outputs])
-            except Exception:
-                pass
-            self._printed_shapes = True
+  def forward(self, inputs, labels, bd_label):
+    outputs = self.model(inputs)  # può essere tensor o lista/tupla
+    if not isinstance(outputs, (list, tuple)):
+        outputs = [outputs]
 
-        H, W = labels.shape[-2], labels.shape[-1]
+    # stampa forme una sola volta (utile per capire l’ordine delle head)
+    if not self._printed_shapes:
+        try:
+            print("[PIDNet heads]", [tuple(o.shape) for o in outputs])
+        except Exception:
+            pass
+        self._printed_shapes = True
 
-        # separa per canali
-        sem_heads = [o for o in outputs if o.dim() >= 4 and o.size(1) > 1]   # es. (B,7,h,w)
-        bd_heads  = [o for o in outputs if o.dim() >= 4 and o.size(1) == 1]  # es. (B,1,h,w)
+    H, W = labels.shape[-2], labels.shape[-1]
 
-        # upsample TUTTE le head semantiche alla size dei label
-        if len(sem_heads) == 0:
-            sem_heads = [outputs[-1]]
-        sem_heads_up = [
-            (F.interpolate(o, size=(H, W), mode='bilinear', align_corners=self.align_corners)
-             if o.shape[-2:] != (H, W) else o)
-            for o in sem_heads
-        ]
+    # separa le head per numero di canali
+    sem_heads = [o for o in outputs if o.dim() >= 4 and o.size(1) > 1]   # es. (B,7,h,w)
+    bd_heads  = [o for o in outputs if o.dim() >= 4 and o.size(1) == 1]  # es. (B,1,h,w)
+    if len(sem_heads) == 0:   # fallback prudente
+        sem_heads = [outputs[-1]]
 
-        # loss semantica (lista OK: la tua CE+Lovasz la gestisce)
-        sem_in = sem_heads_up if len(sem_heads_up) > 1 else sem_heads_up[0]
-        loss_s = self.sem_loss(sem_in, labels)
+    # upsample tutte le head semantiche alla size dei label
+    sem_heads_up = [
+        (F.interpolate(o, size=(H, W), mode='bilinear', align_corners=self.align_corners)
+         if o.shape[-2:] != (H, W) else o)
+        for o in sem_heads
+    ]
 
-        # boundary: prendi l’ultima head a 1 canale, allinea a bd_label
-        loss_b = 0.0
-        if len(bd_heads) > 0:
-            bd_pred = bd_heads[-1]
-            if bd_pred.shape[-2:] != bd_label.shape[-2:]:
-                bd_pred = F.interpolate(
-                    bd_pred, size=bd_label.shape[-2:], mode='bilinear', align_corners=self.align_corners
-                )
-            loss_b = self.bd_loss(bd_pred, bd_label)
+    # ---- Loss semantica ----
+    # Passa una LISTA se la tua CE è OHEM (si aspetta list); con CE normale va bene anche la lista
+    sem_in = sem_heads_up  # usa sempre lista: robusto sia per CE che per OHEM
+    loss_s = self.sem_loss(sem_in, labels)
 
-        losses = loss_s + loss_b
+    # ---- Loss bordo (1 canale) ----
+    loss_b = 0.0
+    if len(bd_heads) > 0:
+        bd_pred = bd_heads[-1]
+        if bd_pred.shape[-2:] != bd_label.shape[-2:]:
+            bd_pred = F.interpolate(
+                bd_pred, size=bd_label.shape[-2:], mode='bilinear',
+                align_corners=self.align_corners
+            )
+        loss_b = self.bd_loss(bd_pred, bd_label)
 
-        # pred per metriche = ultima semantica upsampled
-        pred = sem_heads_up[-1]
-        with torch.no_grad():
-            acc = (pred.argmax(1) == labels).float().mean()
+    # somma finale
+    losses = loss_s + loss_b
 
-        # compatibile con function.train (loss_list[0]=sem, [1]=boundary)
-        return losses, pred, acc, [torch.as_tensor(loss_s), torch.as_tensor(loss_b)]
+    # pred per metriche = ultima semantica upsampled
+    pred = sem_heads_up[-1]
+    with torch.no_grad():
+        acc = (pred.argmax(1) == labels).float().mean()
+
+    # compatibile con function.train: loss_list[0]=sem, [1]=boundary
+    return losses, pred, acc, [torch.as_tensor(loss_s), torch.as_tensor(loss_b)]
 
 
 class AverageMeter(object):
