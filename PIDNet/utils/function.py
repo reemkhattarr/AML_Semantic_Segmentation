@@ -15,12 +15,21 @@ from torch.nn import functional as F
 from utils.utils import AverageMeter
 from utils.utils import get_confusion_matrix
 from utils.utils import adjust_learning_rate
+from torch.amp import autocast, GradScaler
+from torch.nn.utils import clip_grad_norm_
 
 
 
 def train(config, epoch, num_epoch, epoch_iters, base_lr,
-          num_iters, trainloader, optimizer, model, writer_dict):
-    # Training
+          num_iters, trainloader, optimizer, model, writer_dict,
+          scheduler=None, scaler=None, clip_grad=None, amp=False):
+    """
+    Training loop con supporto opzionale a:
+      - scheduler per-iter (es. LambdaLR)
+      - AMP (torch.amp)
+      - clip_grad
+    Se 'scheduler' è passato, NON usa adjust_learning_rate.
+    """
     model.train()
 
     batch_time = AverageMeter()
@@ -28,51 +37,83 @@ def train(config, epoch, num_epoch, epoch_iters, base_lr,
     ave_acc  = AverageMeter()
     avg_sem_loss = AverageMeter()
     avg_bce_loss = AverageMeter()
+
     tic = time.time()
-    cur_iters = epoch*epoch_iters
+    cur_iters = epoch * epoch_iters
     writer = writer_dict['writer']
     global_steps = writer_dict['train_global_steps']
 
+    use_amp = bool(amp) and torch.cuda.is_available()
+    # Se non è passato un GradScaler, creane uno (solo se si usa AMP)
+    if use_amp and not isinstance(scaler, GradScaler):
+        scaler = GradScaler('cuda')
+
     for i_iter, batch in enumerate(trainloader, 0):
+        # Unpack batch (PIDNet-style)
         images, labels, bd_gts, _, _ = batch
-        images = images.cuda()
-        labels = labels.long().cuda()
-        bd_gts = bd_gts.float().cuda()
-        
+        images = images.cuda(non_blocking=True)
+        labels = labels.long().cuda(non_blocking=True)
+        bd_gts = bd_gts.float().cuda(non_blocking=True)
 
-        losses, _, acc, loss_list = model(images, labels, bd_gts)
-        loss = losses.mean()
-        acc  = acc.mean()
+        optimizer.zero_grad(set_to_none=True)
 
-        model.zero_grad()
-        loss.backward()
-        optimizer.step()
+        if use_amp:
+            with autocast('cuda'):
+                losses, _, acc, loss_list = model(images, labels, bd_gts)
+                loss = losses.mean()
+                acc  = acc.mean()
+            scaler.scale(loss).backward()
+            if clip_grad is not None:
+                scaler.unscale_(optimizer)
+                clip_grad_norm_(model.parameters(), max_norm=clip_grad)
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            losses, _, acc, loss_list = model(images, labels, bd_gts)
+            loss = losses.mean()
+            acc  = acc.mean()
+            loss.backward()
+            if clip_grad is not None:
+                clip_grad_norm_(model.parameters(), max_norm=clip_grad)
+            optimizer.step()
 
-        # measure elapsed time
+        # LR step: se c'è uno scheduler, usalo; altrimenti la tua policy legacy
+        if scheduler is not None:
+            scheduler.step()
+            lr_values = [pg['lr'] for pg in optimizer.param_groups]
+        else:
+            lr_values = adjust_learning_rate(optimizer, base_lr, num_iters, i_iter + cur_iters)
+            # adjust_learning_rate può restituire None o valori; in log gestiamo entrambi
+
+        # misura tempo
         batch_time.update(time.time() - tic)
         tic = time.time()
 
-        # update average loss
+        # update meter
         ave_loss.update(loss.item())
         ave_acc.update(acc.item())
-        avg_sem_loss.update(loss_list[0].mean().item())
-        avg_bce_loss.update(loss_list[1].mean().item())
-
-        lr = adjust_learning_rate(optimizer,
-                                  base_lr,
-                                  num_iters,
-                                  i_iter+cur_iters)
+        if isinstance(loss_list, (list, tuple)) and len(loss_list) >= 2:
+            # 0: semantic CE, 1: BCE (boundary)
+            avg_sem_loss.update(loss_list[0].mean().item())
+            avg_bce_loss.update(loss_list[1].mean().item())
 
         if i_iter % config.PRINT_FREQ == 0:
-            msg = 'Epoch: [{}/{}] Iter:[{}/{}], Time: {:.2f}, ' \
-                  'lr: {}, Loss: {:.6f}, Acc:{:.6f}, Semantic loss: {:.6f}, BCE loss: {:.6f}, SB loss: {:.6f}' .format(
-                      epoch, num_epoch, i_iter, epoch_iters,
-                      batch_time.average(), [x['lr'] for x in optimizer.param_groups], ave_loss.average(),
-                      ave_acc.average(), avg_sem_loss.average(), avg_bce_loss.average(),ave_loss.average()-avg_sem_loss.average()-avg_bce_loss.average())
+            lr_show = lr_values if lr_values is not None else [pg['lr'] for pg in optimizer.param_groups]
+            msg = ('Epoch: [{}/{}] Iter:[{}/{}], Time: {:.2f}, lr: {}, '
+                   'Loss: {:.6f}, Acc:{:.6f}, Semantic loss: {:.6f}, '
+                   'BCE loss: {:.6f}, SB loss: {:.6f}').format(
+                        epoch, num_epoch, i_iter, epoch_iters,
+                        batch_time.average(), lr_show, ave_loss.average(),
+                        ave_acc.average(), avg_sem_loss.average(),
+                        avg_bce_loss.average(),
+                        ave_loss.average() - avg_sem_loss.average() - avg_bce_loss.average()
+                   )
             logging.info(msg)
 
+    # TensorBoard (coerente con il tuo codice)
     writer.add_scalar('train_loss', ave_loss.average(), global_steps)
     writer_dict['train_global_steps'] = global_steps + 1
+
 
 def validate(config, testloader, model, writer_dict):
     model.eval()

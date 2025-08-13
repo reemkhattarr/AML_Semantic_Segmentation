@@ -111,20 +111,31 @@ def main(config_path: str = "configs/train_deeplabv2_loveda.yaml"):
         model.train()
         running_loss = 0.0
         for images, masks in tqdm(train_loader, desc=f"Epoch {epoch+1}/{config['train']['epochs']}"):
-            print("Batch images shape:", images.shape)
-            print("Batch masks unique:", torch.unique(masks))
-            print("Batch masks min/max:", masks.min().item(), masks.max().item())
+            #print("Batch images shape:", images.shape)
+            #print("Batch masks unique:", torch.unique(masks))
+            #print("Batch masks min/max:", masks.min().item(), masks.max().item())
 
             images, masks = images.to(device), masks.to(device)
             optimizer.zero_grad()
             outputs = model(images)
-            loss = criterion(outputs, masks)
+            #loss = criterion(outputs, masks)
+            
+            #probs = torch.softmax(outputs, dim=1)
+            #loss = lovasz_softmax(probs, masks, ignore=config['data']['ignore_index'])
+
+            
+            ce_loss = criterion(outputs, masks)
+            probs = torch.softmax(outputs, dim=1)
+            lovasz = lovasz_softmax(probs, masks, ignore=config['data']['ignore_index'])
+            loss = 0.5 * ce_loss + 0.5 * lovasz
+            
+            
             loss.backward()
             optimizer.step()
             running_loss += loss.item() * images.size(0)
 
         avg_loss = running_loss / len(train_loader.dataset)
-        print(f"Loss: {avg_loss:.4f}")
+        #print(f"Loss: {avg_loss:.4f}")
         logger.info(f"Epoch {epoch+1}: Train Loss: {avg_loss:.4f}")
 
         # Validation
@@ -134,8 +145,8 @@ def main(config_path: str = "configs/train_deeplabv2_loveda.yaml"):
             for images, masks in val_loader:
                 images, masks = images.to(device), masks.to(device)
                 outputs = model(images)
-                print("Output logits shape:", outputs.shape)   # Should be (N, num_classes, H, W)
-                print("Pred argmax unique classes:", torch.unique(outputs.argmax(dim=1)))
+                #print("Output logits shape:", outputs.shape)   # Should be (N, num_classes, H, W)
+                #print("Pred argmax unique classes:", torch.unique(outputs.argmax(dim=1)))
                 preds = outputs.argmax(dim=1)
                 miou_metric.update(preds.cpu(), masks.cpu())
         
@@ -148,9 +159,9 @@ def main(config_path: str = "configs/train_deeplabv2_loveda.yaml"):
         miou, per_class_iou = miou_metric.compute(return_per_class=True)
         logger.info(f"Epoch {epoch+1}: Val mIoU: {miou:.4f}")
 
-        print(f"Val mIoU: {miou:.4f}")
+        #print(f"Val mIoU: {miou:.4f}")
         for idx, class_iou in enumerate(per_class_iou):
-            print(f"    Class {idx} IoU: {class_iou:.4f}")
+            #print(f"    Class {idx} IoU: {class_iou:.4f}")
             logger.info(f"    Class {idx} IoU: {class_iou:.4f}")
 
         

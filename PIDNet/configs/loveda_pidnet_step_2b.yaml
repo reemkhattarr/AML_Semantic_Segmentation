@@ -58,7 +58,7 @@ TRAIN:
   FLIP: False
   IGNORE_LABEL: -1
   IMAGE_SIZE: [512, 512]
-  LR: 0.01
+  LR: 0.001
   MOMENTUM: 0.9
   MULTI_SCALE: False
   NESTEROV: False
