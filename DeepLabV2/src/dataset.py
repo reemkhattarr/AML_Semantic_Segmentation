@@ -27,6 +27,7 @@ class LoveDADataset(Dataset):
         # Load and preprocess the image
         image = Image.open(self.images[idx]).convert('RGB').resize(self.input_size)
         mask = Image.open(self.masks[idx]).resize(self.input_size, resample=Image.NEAREST)
+        print("Raw mask unique:", np.unique(mask))
         
         # Convert to numpy arrays
         image = np.asarray(image).astype(np.float32) / 255.0
@@ -39,7 +40,9 @@ class LoveDADataset(Dataset):
         
         # Subtract 1 from the mask to make it 0-indexed
         mask = mask - 1
-        
+        print("Shifted mask unique:", np.unique(mask))  # Should be [0, ..., 6]
+        print("Mask min/max shape:", mask.min(), mask.max(), mask.shape)
+
         # Convert to torch.Tensor and permute to (C, H, W)
         image = torch.from_numpy(image).permute(2, 0, 1)  # (C, H, W)
         mask = torch.from_numpy(mask).long()  # (H, W)

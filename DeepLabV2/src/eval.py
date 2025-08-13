@@ -42,6 +42,10 @@ def evaluate(config, checkpoint_path, split='val'):
             images, masks = images.to(device), masks.to(device)
             outputs = model(images)
             preds = outputs.argmax(dim=1)
+            print("Pred unique:", torch.unique(preds))
+            print("Target unique:", torch.unique(masks))
+            for cls in range(config['model']['num_classes']):
+                print(f"Predicted class {cls}: {(preds == cls).sum().item()} pixels")
             miou_metric.update(preds.cpu(), masks.cpu())
     miou, per_class_iou = miou_metric.compute(return_per_class=True)
 
