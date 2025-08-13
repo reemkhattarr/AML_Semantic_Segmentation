@@ -150,6 +150,10 @@ def main(config_path: str = "configs/train_deeplabv2_loveda.yaml"):
         for idx, class_iou in enumerate(per_class_iou):
             logger.info(f"    Class {idx} IoU: {class_iou:.4f}")
 
+        print(f"Val mIoU: {miou:.4f}")
+        for idx, class_iou in enumerate(per_class_iou):
+            print(f"    Class {idx} IoU: {class_iou:.4f}")
+
 
         # Save best model
         if miou > best_miou:
