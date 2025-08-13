@@ -13,6 +13,33 @@ from src.dataset import LoveDADataset
 from src.utils.metrics import MeanIoU  # You should implement this
 from src.utils.logger import setup_logger  # Optional
 
+from PIL import Image
+
+from dataset import LoveDADataset
+
+train_dataset = LoveDADataset(
+    root='/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA',
+    split='Train/Rural',  # or whatever your training split is
+    image_dir='images_png',
+    mask_dir='masks_png'
+)
+mask_paths = train_dataset.masks  # This is a list of all mask file paths
+
+# Suppose you have a list of mask file paths: mask_paths
+num_classes = 7
+class_counts = np.zeros(num_classes, dtype=np.int64)
+
+for mask_path in mask_paths:
+    mask = np.array(Image.open(mask_path))
+    for c in range(num_classes):
+        class_counts[c] += np.sum(mask == c)
+
+freq = class_counts / class_counts.sum()
+weights = 1 / np.log(1.02 + freq)  # or 1 / freq
+weights = weights / weights.sum() * num_classes  # Normalize (optional)
+
+class_weights = torch.tensor(weights, dtype=torch.float32)
+
 try:
     import wandb
     WANDB_AVAILABLE = True
@@ -74,7 +101,8 @@ def main(config_path: str = "configs/train_deeplabv2_loveda.yaml"):
     )
 
     # Loss
-    criterion = nn.CrossEntropyLoss(ignore_index=config['data']['ignore_index'])
+    criterion = nn.CrossEntropyLoss(weight=class_weights.to(device),
+                    ignore_index=config['data']['ignore_index'])
 
     # Experiment tracking
     if WANDB_AVAILABLE and config.get('wandb', {}).get('enable', False):
