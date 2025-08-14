@@ -19,7 +19,7 @@ from utils.model_measures import count_params, measure_latency, count_flops
 import torch.nn as nn
 import datasets
 from tensorboardX import SummaryWriter
-from utils.criterion import CrossEntropy, OhemCrossEntropy, BondaryLoss
+from utils.criterion import CrossEntropy, OhemCrossEntropy, BoundaryLoss
 from utils.function import validate
 from utils.utils import FullModel
 
@@ -191,7 +191,7 @@ def main():
                 ignore_label=config.TRAIN.IGNORE_LABEL,
                 weight=getattr(test_dataset, "class_weights", None)
             )
-        bd_criterion = BondaryLoss()
+        bd_criterion = BoundaryLoss()
 
         # wrapper per riusare validate()
         eval_wrapper = FullModel(eval_model, sem_criterion, bd_criterion)

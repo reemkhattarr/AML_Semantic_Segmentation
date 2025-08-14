@@ -17,17 +17,17 @@ list_base = "/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/l
 # TRAIN - Rural
 make_lst(
     split="Train",
-    out_path=os.path.join(list_base, "Train/Rural/train.lst"),
-    relative_prefix="Train/Rural",  # <-- CORRETTO QUI
-    img_dir=os.path.join(dataset_base, "Train/Rural/images_png"),
-    mask_dir=os.path.join(dataset_base, "Train/Rural/masks_png")
+    out_path=os.path.join(list_base, "Train/Urban/train.lst"),
+    relative_prefix="Train/Urban",  # <-- CORRETTO QUI
+    img_dir=os.path.join(dataset_base, "Train/Urban/images_png"),
+    mask_dir=os.path.join(dataset_base, "Train/Urban/masks_png")
 )
 
-# VAL - Rural
+# VAL - Urban
 make_lst(
     split="Val",
-    out_path=os.path.join(list_base, "Val/Rural/val.lst"),
-    relative_prefix="Val/Rural",  # <-- CORRETTO QUI
-    img_dir=os.path.join(dataset_base, "Val/Rural/images_png"),
-    mask_dir=os.path.join(dataset_base, "Val/Rural/masks_png")
+    out_path=os.path.join(list_base, "Val/Urban/val.lst"),
+    relative_prefix="Val/Urban",  # <-- CORRETTO QUI
+    img_dir=os.path.join(dataset_base, "Val/Urban/images_png"),
+    mask_dir=os.path.join(dataset_base, "Val/Urban/masks_png")
 )

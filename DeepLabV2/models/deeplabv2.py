@@ -116,7 +116,7 @@ class DeepLabV2(nn.Module):
         for param in self.aspp.parameters():
             if param.requires_grad:
                 yield param
-
+    '''
     def optim_parameters(self, lr: float) -> list[Dict[str, Any]]:
         """
         Suggest parameter groups for optimizer: 1x for backbone, 10x for ASPP.
@@ -125,6 +125,17 @@ class DeepLabV2(nn.Module):
             {"params": self.get_1x_lr_params(), "lr": lr},
             {"params": self.get_10x_lr_params(), "lr": lr * 10}
         ]
+    '''
+    def optim_parameters(self, base_lr: float, head_lr_multiplier: float = 10.0) -> list[dict[str, Any]]:
+        """
+        Suggest parameter groups for optimizer: base_lr for backbone, 
+        base_lr * head_lr_multiplier for ASPP.
+        """
+        return [
+            {"params": self.get_1x_lr_params(), "lr": base_lr},
+            {"params": self.get_10x_lr_params(), "lr": base_lr * head_lr_multiplier}
+        ]
+
 
 def get_deeplabv2_model(
     num_classes: int,

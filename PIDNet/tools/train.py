@@ -22,13 +22,13 @@ import models
 import datasets
 from configs import config
 from configs import update_config
-from utils.criterion import CrossEntropy, OhemCrossEntropy, BondaryLoss
+from utils.criterion import CrossEntropy, OhemCrossEntropy, BoundaryLoss
 from utils.function import train, validate
 from utils.utils import create_logger, FullModel
 
 import json
 from utils.model_measures import count_params, measure_latency, count_flops
-from utils.criterion import CrossEntropyLovasz, BondaryLoss
+from utils.criterion import CrossEntropyLovasz, BoundaryLoss
 
 import math
 from torch.amp import GradScaler as AmpGradScaler
@@ -207,7 +207,7 @@ def main():
     )
 
 
-    bd_criterion = BondaryLoss()
+    bd_criterion = BoundaryLoss()
     
     model = FullModel(model, sem_criterion, bd_criterion, align_corners=config.MODEL.ALIGN_CORNERS)
     model = nn.DataParallel(model, device_ids=gpus).cuda()
