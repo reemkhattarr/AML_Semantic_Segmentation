@@ -11,8 +11,8 @@ from tqdm import tqdm
 
 from deeplabv2 import get_deeplabv2_model
 from src.dataset import LoveDADataset
-from src.utils.metrics import MeanIoU  # You should implement this
-from src.utils.logger import setup_logger  # Optional
+from src.utils.metrics import MeanIoU  
+from src.utils.logger import setup_logger  
 
 try:
     import wandb
@@ -107,6 +107,9 @@ def main(config_path: str = "configs/train_deeplabv2_loveda.yaml"):
         wandb.init(project=config['wandb']['project'], config=config)
 
     best_miou = 0.0
+    patience = 12
+    epochs_no_improvement = 0
+
     for epoch in range(config['train']['epochs']):
         model.train()
         running_loss = 0.0
@@ -164,17 +167,29 @@ def main(config_path: str = "configs/train_deeplabv2_loveda.yaml"):
             #print(f"    Class {idx} IoU: {class_iou:.4f}")
             logger.info(f"    Class {idx} IoU: {class_iou:.4f}")
 
-        
-
 
         # Save best model
         if miou > best_miou:
             best_miou = miou
             torch.save(model.state_dict(), os.path.join(config['train']['output_dir'], 'best_model.pth'))
+            epochs_no_improvement = 0
+        else:
+            epochs_no_improvement += 1
+            logger.info(f'No improvement in mIoU for {epochs_no_improvement} epoch(s)')
+
+        if epochs_no_improvement > patience:
+            logger.info(f'Early stopping triggered after {patience} epochs without improvement.')
+            break
 
         # Log to wandb
         if WANDB_AVAILABLE and config.get('wandb', {}).get('enable', False):
             wandb.log({'train_loss': avg_loss, 'val_miou': miou, 'epoch': epoch+1})
+
+    # Restore best model weights (optional)
+    best_model_path = os.path.join(config['train']['output_dir'], 'best_model.pth')
+    if os.path.exists(best_model_path):
+        model.load_state_dict(torch.load(best_model_path))
+        logger.info("Best model weights restored after early stopping.")
 
     logger.info(f"Training complete. Best Val mIoU: {best_miou:.4f}")
 
