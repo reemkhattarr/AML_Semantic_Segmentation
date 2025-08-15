@@ -10,18 +10,18 @@ from .base_dataset import BaseDataset
 
 class CamVid(BaseDataset):
     def __init__(self, 
-                 root, 
-                 list_path, 
-                 num_classes=11,
-                 multi_scale=True, 
-                 flip=True, 
-                 ignore_label=255, 
-                 base_size=960, 
-                 crop_size=(720, 960),
-                 scale_factor=16,
-                 mean=[0.485, 0.456, 0.406], 
-                 std=[0.229, 0.224, 0.225],
-                 bd_dilate_size=4):
+                root, 
+                list_path, 
+                num_classes=11,
+                multi_scale=True, 
+                flip=True, 
+                ignore_label=255, 
+                base_size=960, 
+                crop_size=(720, 960),
+                scale_factor=16,
+                mean=[0.485, 0.456, 0.406], 
+                std=[0.229, 0.224, 0.225],
+                bd_dilate_size=4):
 
         super(CamVid, self).__init__(ignore_label, base_size,
                 crop_size, scale_factor, mean, std)
@@ -41,9 +41,9 @@ class CamVid(BaseDataset):
         self.ignore_label = ignore_label
         
         self.color_list = [[0, 128, 192], [128, 0, 0], [64, 0, 128],
-                             [192, 192, 128], [64, 64, 128], [64, 64, 0],
-                             [128, 64, 128], [0, 0, 192], [192, 128, 128],
-                             [128, 128, 128], [128, 128, 0]]
+                            [192, 192, 128], [64, 64, 128], [64, 64, 0],
+                            [128, 64, 128], [0, 0, 192], [192, 128, 128],
+                            [128, 128, 128], [128, 128, 0]]
         
         self.class_weights = None
         

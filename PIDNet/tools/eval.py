@@ -23,6 +23,7 @@ from configs import config
 from configs import update_config
 from utils.function import testval, test
 from utils.utils import create_logger
+from utils.metrics import compute_flops_and_params, measure_latency
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train segmentation network')
@@ -62,7 +63,7 @@ def main():
         model_state_file = config.TEST.MODEL_FILE
     else:
         model_state_file = os.path.join(final_output_dir, 'best.pt')      
-   
+    
     logger.info('=> loading model from {}'.format(model_state_file))
         
     pretrained_dict = torch.load(model_state_file)
@@ -78,6 +79,15 @@ def main():
     model.load_state_dict(model_dict)
 
     model = model.cuda()
+    
+    # --- Compute FLOPs, Params, and Latency ---
+    from utils.utils import compute_flops_and_params, measure_latency  # adjust import if needed
+
+    input_shape = (1, 3, config.TEST.IMAGE_SIZE[0], config.TEST.IMAGE_SIZE[1])
+    flops, params = compute_flops_and_params(model, input_shape)
+    latency_stats = measure_latency(model, input_shape)
+    logger.info(f"FLOPs: {flops:.2f}, Params: {params:.2f}, Latency: {latency_stats['mean_latency_ms']:.2f} ms, FPS: {latency_stats['fps']:.2f}")
+
 
     # prepare data
     test_size = (config.TEST.IMAGE_SIZE[1], config.TEST.IMAGE_SIZE[0])

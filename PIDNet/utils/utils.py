@@ -20,14 +20,11 @@ from configs import config
 
 class FullModel(nn.Module):
 
-  def __init__(self, model, sem_loss, bd_loss, align_corners=True):
+  def __init__(self, model, sem_loss, bd_loss):
     super(FullModel, self).__init__()
     self.model = model
     self.sem_loss = sem_loss
     self.bd_loss = bd_loss
-    self.align_corners = align_corners
-    self._printed_shapes = False  # debug one-shot
-    
 
   def pixel_acc(self, pred, label):
     _, preds = torch.max(pred, dim=1)
@@ -37,84 +34,27 @@ class FullModel(nn.Module):
     acc = acc_sum.float() / (pixel_sum.float() + 1e-10)
     return acc
 
-  # def forward(self, inputs, labels, bd_gt, *args, **kwargs):
+  def forward(self, inputs, labels, bd_gt, *args, **kwargs):
     
-  #   outputs = self.model(inputs, *args, **kwargs)
+    outputs = self.model(inputs, *args, **kwargs)
     
-  #   h, w = labels.size(1), labels.size(2)
-  #   ph, pw = outputs[0].size(2), outputs[0].size(3)
-  #   if ph != h or pw != w:
-  #       for i in range(len(outputs)):
-  #           outputs[i] = F.interpolate(outputs[i], size=(
-  #               h, w), mode='bilinear', align_corners=config.MODEL.ALIGN_CORNERS)
+    h, w = labels.size(1), labels.size(2)
+    ph, pw = outputs[0].size(2), outputs[0].size(3)
+    if ph != h or pw != w:
+        for i in range(len(outputs)):
+            outputs[i] = F.interpolate(outputs[i], size=(
+                h, w), mode='bilinear', align_corners=config.MODEL.ALIGN_CORNERS)
 
-  #   acc  = self.pixel_acc(outputs[-2], labels)
-  #   loss_s = self.sem_loss(outputs[:-1], labels)
-  #   loss_b = self.bd_loss(outputs[-1], bd_gt)
+    acc  = self.pixel_acc(outputs[-2], labels)
+    loss_s = self.sem_loss(outputs[:-1], labels)
+    loss_b = self.bd_loss(outputs[-1], bd_gt)
 
-  #   filler = torch.ones_like(labels) * config.TRAIN.IGNORE_LABEL
-  #   bd_label = torch.where(F.sigmoid(outputs[-1][:,0,:,:])>0.8, labels, filler)
-  #   #loss_sb = self.sem_loss(outputs[-2], bd_label)
-  #   loss_sb = self.bd_loss(outputs[-2], bd_label)
-  #   loss = loss_s + loss_b + loss_sb
+    filler = torch.ones_like(labels) * config.TRAIN.IGNORE_LABEL
+    bd_label = torch.where(F.sigmoid(outputs[-1][:,0,:,:])>0.8, labels, filler)
+    loss_sb = self.sem_loss(outputs[-2], bd_label)
+    loss = loss_s + loss_b + loss_sb
 
-  #   return torch.unsqueeze(loss,0), outputs[:-1], acc, [loss_s, loss_b]
-
-
-  def forward(self, inputs, labels, bd_label):
-    outputs = self.model(inputs)  # può essere tensor o lista/tupla
-    if not isinstance(outputs, (list, tuple)):
-        outputs = [outputs]
-
-    # stampa forme una sola volta (utile per capire l’ordine delle head)
-    if not self._printed_shapes:
-        try:
-            print("[PIDNet heads]", [tuple(o.shape) for o in outputs])
-        except Exception:
-            pass
-        self._printed_shapes = True
-
-    H, W = labels.shape[-2], labels.shape[-1]
-
-    # separa le head per numero di canali
-    sem_heads = [o for o in outputs if o.dim() >= 4 and o.size(1) > 1]   # es. (B,7,h,w)
-    bd_heads  = [o for o in outputs if o.dim() >= 4 and o.size(1) == 1]  # es. (B,1,h,w)
-    if len(sem_heads) == 0:   # fallback prudente
-        sem_heads = [outputs[-1]]
-
-    # upsample tutte le head semantiche alla size dei label
-    sem_heads_up = [
-        (F.interpolate(o, size=(H, W), mode='bilinear', align_corners=self.align_corners)
-         if o.shape[-2:] != (H, W) else o)
-        for o in sem_heads
-    ]
-
-    # ---- Loss semantica ----
-    # Passa una LISTA se la tua CE è OHEM (si aspetta list); con CE normale va bene anche la lista
-    sem_in = sem_heads_up  # usa sempre lista: robusto sia per CE che per OHEM
-    loss_s = self.sem_loss(sem_in, labels)
-
-    # ---- Loss bordo (1 canale) ----
-    loss_b = 0.0
-    if len(bd_heads) > 0:
-        bd_pred = bd_heads[-1]
-        if bd_pred.shape[-2:] != bd_label.shape[-2:]:
-            bd_pred = F.interpolate(
-                bd_pred, size=bd_label.shape[-2:], mode='bilinear',
-                align_corners=self.align_corners
-            )
-        loss_b = self.bd_loss(bd_pred, bd_label)
-
-    # somma finale
-    losses = loss_s + loss_b
-
-    # pred per metriche = ultima semantica upsampled
-    pred = sem_heads_up[-1]
-    with torch.no_grad():
-        acc = (pred.argmax(1) == labels).float().mean()
-
-    # compatibile con function.train: loss_list[0]=sem, [1]=boundary
-    return losses, pred, acc, [torch.as_tensor(loss_s), torch.as_tensor(loss_b)]
+    return torch.unsqueeze(loss,0), outputs[:-1], acc, [loss_s, loss_b]
 
 
 class AverageMeter(object):
@@ -193,7 +133,7 @@ def get_confusion_matrix(label, pred, size, num_class, ignore=-1):
     output = pred.cpu().numpy().transpose(0, 2, 3, 1)
     seg_pred = np.asarray(np.argmax(output, axis=3), dtype=np.uint8)
     seg_gt = np.asarray(
-    label.cpu().numpy()[:, :size[-2], :size[-1]], dtype=int)
+    label.cpu().numpy()[:, :size[-2], :size[-1]], dtype=np.int)
 
     ignore_index = seg_gt != ignore
     seg_gt = seg_gt[ignore_index]
