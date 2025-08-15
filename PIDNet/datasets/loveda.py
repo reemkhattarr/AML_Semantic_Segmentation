@@ -8,7 +8,7 @@ import cv2
 
 class LoveDA(Dataset):
     def __init__(self, root, list_path, num_classes=7, multi_scale=False,
-                 flip=False, ignore_label=255, base_size=512, crop_size=512, scale_factor=16):
+                flip=False, ignore_label=255, base_size=512, crop_size=512, scale_factor=16):
         self.root = root
         self.list_path = list_path
         self.num_classes = num_classes
