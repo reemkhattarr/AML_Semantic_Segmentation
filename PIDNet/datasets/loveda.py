@@ -9,13 +9,9 @@ from PIL import Image
 import torch
 from .base_dataset import BaseDataset
 
-try:
-    import albumentations as A
-except ImportError:
-    A = None
 
 # You can adjust these based on your needs
-LOVEDA_CLASS_WEIGHTS = [0.000000, 0.116411, 0.266041, 0.607794, 1.511413, 0.745507, 0.712438, 3.040396]
+LOVEDA_CLASS_WEIGHTS = [0.116411, 0.266041, 0.607794, 1.511413, 0.745507, 0.712438, 3.040396]
 
 class LoveDA(BaseDataset):
     def __init__(self,
@@ -24,7 +20,7 @@ class LoveDA(BaseDataset):
                 num_classes=7,
                 multi_scale=False,
                 flip=False,
-                ignore_label=-1,
+                ignore_label=255,
                 base_size=720,
                 crop_size=(720, 720),
                 scale_factor=16,
@@ -58,6 +54,12 @@ class LoveDA(BaseDataset):
 
         self.img_list = [line.strip().split() for line in open(os.path.join(root, list_path))]
         self.files = self.read_files()
+        
+        self.label_mapping = {0: ignore_label, 
+                            1: 0, 2: 1, 
+                            3: 2, 4: 3, 
+                            5: 4, 6: 5, 
+                            7: 6}
 
         # Class weights for loss
         self.class_weights = torch.tensor(LOVEDA_CLASS_WEIGHTS, dtype=torch.float32)
@@ -76,19 +78,16 @@ class LoveDA(BaseDataset):
             })
         return files
     
-    def color2label(self, color_map):
-        label = np.ones(color_map.shape[:2]) * self.ignore_label
-        for i, v in enumerate(self.color_list):
-            label[(color_map == v).sum(2) == 3] = i
-
-        return label.astype(np.uint8)
+    def convert_label(self, label, inverse=False):
+        temp = label.copy()
+        if inverse:
+            for v, k in self.label_mapping.items():
+                label[temp == k] = v
+        else:
+            for k, v in self.label_mapping.items():
+                label[temp == k] = v
+        return label
     
-
-    def label2color(self, label):
-        color_map = np.zeros(label.shape + (3,))
-        for i, v in enumerate(self.color_list):
-            color_map[label == i] = self.color_list[i]
-
         return color_map.astype(np.uint8)
 
     def __getitem__(self, index):
@@ -98,8 +97,7 @@ class LoveDA(BaseDataset):
         label = cv2.imread(os.path.join(self.root, 'LoveDA', item["label"]), cv2.IMREAD_GRAYSCALE)
         size = image.shape
 
-        # Convert to model's ignore label
-        label = np.where(label == 255, self.ignore_label, label)
+        label = self.convert_label(label)
 
         # Generate edge map, and apply further transforms as required by BaseDataset
         image, label, edge = self.gen_sample(
@@ -115,7 +113,7 @@ class LoveDA(BaseDataset):
     def save_pred(self, preds, sv_path, name):
         preds = np.asarray(np.argmax(preds.cpu(), axis=1), dtype=np.uint8)
         for i in range(preds.shape[0]):
-            pred = self.label2color(preds[i])
+            pred = self.convert_label(preds[i], inverse=True)
             save_img = Image.fromarray(pred)
             save_img.save(os.path.join(sv_path, name[i]+'.png'))
 
@@ -132,3 +130,15 @@ def generate_lst(path_images, path_labels, output_path):
             path_image = os.path.join(path_images, image).replace("\\", "/")
             path_label = os.path.join(path_labels, label).replace("\\", "/")
             f.write(f"{path_image}\t{path_label}\n")
+            
+
+train_images_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Train/Urban/images_png'
+train_masks_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Train/Urban/masks_png'
+train_lst_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/loveda/train.lst'
+
+val_images_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Val/Urban/images_png'
+val_masks_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Val/Urban/masks_png'
+val_lst_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/loveda/val.lst'
+
+generate_lst(train_images_path, train_masks_path, train_lst_path)
+generate_lst(val_images_path, val_masks_path, val_lst_path)
