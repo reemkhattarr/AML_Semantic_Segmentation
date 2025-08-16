@@ -126,7 +126,7 @@ def create_logger(cfg, cfg_name, phase='train'):
 
     return logger, str(final_output_dir), str(tensorboard_log_dir)
 
-def get_confusion_matrix(label, pred, size, num_class, ignore=-1):
+def get_confusion_matrix(label, pred, size, num_class, ignore=255):
     """
     Calcute the confusion matrix by given label and pred
     """

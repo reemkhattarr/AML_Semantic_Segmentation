@@ -81,7 +81,6 @@ def main():
     model = model.cuda()
     
     # --- Compute FLOPs, Params, and Latency ---
-    from utils.utils import compute_flops_and_params, measure_latency  # adjust import if needed
 
     input_shape = (1, 3, config.TEST.IMAGE_SIZE[0], config.TEST.IMAGE_SIZE[1])
     flops, params = compute_flops_and_params(model, input_shape)
@@ -132,7 +131,7 @@ def main():
 
 
     end = timeit.default_timer()
-    logger.info('Mins: %d' % np.int((end-start)/60))
+    logger.info('Mins: %d' % int((end-start)/60))
     logger.info('Done')
 
 

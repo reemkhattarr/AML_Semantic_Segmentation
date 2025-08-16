@@ -8,7 +8,7 @@ from configs import config
 
 
 class CrossEntropy(nn.Module):
-    def __init__(self, ignore_label=-1, weight=None):
+    def __init__(self, ignore_label=255, weight=None):
         super(CrossEntropy, self).__init__()
         self.ignore_label = ignore_label
         self.criterion = nn.CrossEntropyLoss(
@@ -41,7 +41,7 @@ class CrossEntropy(nn.Module):
 
 
 class OhemCrossEntropy(nn.Module):
-    def __init__(self, ignore_label=-1, thres=0.7,
+    def __init__(self, ignore_label=255, thres=0.7,
                  min_kept=100000, weight=None):
         super(OhemCrossEntropy, self).__init__()
         self.thresh = thres
