@@ -9,8 +9,9 @@ from PIL import Image
 import torch
 from .base_dataset import BaseDataset
 
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
-# You can adjust these based on your needs
 LOVEDA_CLASS_WEIGHTS = [0.116411, 0.266041, 0.607794, 1.511413, 0.745507, 0.712438, 3.040396]
 
 class LoveDA(BaseDataset):
@@ -27,7 +28,7 @@ class LoveDA(BaseDataset):
                 mean=[0.485, 0.456, 0.406],
                 std=[0.229, 0.224, 0.225],
                 bd_dilate_size=4,
-                use_augmentation=False,
+                augmentation_type=None,
                 aug_prob=0.5,
                 transform=None):
 
@@ -64,6 +65,7 @@ class LoveDA(BaseDataset):
         # Class weights for loss
         self.class_weights = torch.tensor(LOVEDA_CLASS_WEIGHTS, dtype=torch.float32)
         
+        self.augmentation = get_augmentation(augmentation_type, aug_prob)
 
 
     def read_files(self):
@@ -98,6 +100,11 @@ class LoveDA(BaseDataset):
         size = image.shape
 
         label = self.convert_label(label)
+        
+        if self.augmentation is not None:
+            augmented = self.augmentation(image=image, mask=label)
+            image = augmented['image']
+            label = augmented['mask']
 
         # Generate edge map, and apply further transforms as required by BaseDataset
         image, label, edge = self.gen_sample(
@@ -118,6 +125,28 @@ class LoveDA(BaseDataset):
             save_img.save(os.path.join(sv_path, name[i]+'.png'))
 
 
+def get_augmentation(aug_type=None, prob=0.5):
+    if aug_type is None or aug_type == 'none':
+        return None
+    # If it's a string, make it a list
+    if isinstance(aug_type, str):
+        aug_type = [aug_type]
+    aug_list = []
+    if 'flip' in aug_type:
+        aug_list.append(A.HorizontalFlip(p=prob))
+    if 'blur' in aug_type:
+        aug_list.append(A.GaussianBlur(blur_limit=(3, 7), p=prob))
+    if 'multiply' in aug_type:
+        aug_list.append(A.MultiplicativeNoise(multiplier=(0.9, 1.1), p=prob))
+    if 'color' in aug_type:
+        aug_list.append(A.ColorJitter(p=prob))
+    # Add more as needed
+    if aug_list:
+        return A.Compose(aug_list)
+    return None
+
+
+
 def generate_lst(path_images, path_labels, output_path):
     '''
     Generate a list of image and label paths.
@@ -132,13 +161,18 @@ def generate_lst(path_images, path_labels, output_path):
             f.write(f"{path_image}\t{path_label}\n")
             
 
-train_images_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Train/Urban/images_png'
-train_masks_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Train/Urban/masks_png'
-train_lst_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/loveda/train.lst'
+train_urban_images_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Train/Urban/images_png'
+train_urban_masks_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Train/Urban/masks_png'
+train_urban_lst_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/loveda/train_urban.lst'
 
-val_images_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Val/Urban/images_png'
-val_masks_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Val/Urban/masks_png'
-val_lst_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/loveda/val.lst'
+val_urban_images_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Val/Urban/images_png'
+val_urban_masks_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Val/Urban/masks_png'
+val_urban_lst_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/loveda/val_urban.lst'
 
-generate_lst(train_images_path, train_masks_path, train_lst_path)
-generate_lst(val_images_path, val_masks_path, val_lst_path)
+val_rural_images_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Val/Rural/images_png'
+val_rural_masks_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Val/Rural/masks_png'
+val_rural_lst_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/loveda/val_rural.lst'
+
+generate_lst(train_urban_images_path, train_urban_masks_path, train_urban_lst_path)
+generate_lst(val_urban_images_path, val_urban_masks_path, val_urban_lst_path)
+generate_lst(val_rural_images_path, val_rural_masks_path, val_rural_lst_path)

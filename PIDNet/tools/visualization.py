@@ -5,6 +5,8 @@ import numpy as np
 from torch.utils.data import DataLoader
 from PIL import Image
 import yaml
+import _init_paths
+
 
 # LoveDA 7-class color palette
 LOVEDA_COLORMAP = np.array([
@@ -33,8 +35,12 @@ def decode_segmap(mask, colormap=LOVEDA_COLORMAP, ignore_index=None):
 
 def visualize(config_path, checkpoint_path, split='val', output_dir='visualizations', num_samples=10):
     # Load config
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
+    from configs import config as cfg
+    from configs import update_config
+    
+    update_config(cfg, argparse.Namespace(cfg=config_path, opts=[]))
+    config = cfg  
+
 
     import models
     import datasets

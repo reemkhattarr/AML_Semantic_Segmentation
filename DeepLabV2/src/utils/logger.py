@@ -24,6 +24,13 @@ def setup_logger(
     Returns:
         logging.Logger: Configured logger instance.
     """
+    output_dir = config['train']['output_dir']
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Default log file in output_dir
+    if log_file is None:
+        log_file = output_dir / "output.log"
+
     logger = logging.getLogger(name)
     logger.setLevel(level)
     formatter = logging.Formatter(fmt=fmt, datefmt=datefmt)
@@ -47,3 +54,4 @@ def setup_logger(
     # Avoid propagating to root logger
     logger.propagate = False
     return logger
+

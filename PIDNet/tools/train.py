@@ -91,7 +91,11 @@ def main():
                         ignore_label=config.TRAIN.IGNORE_LABEL,
                         base_size=config.TRAIN.BASE_SIZE,
                         crop_size=crop_size,
-                        scale_factor=config.TRAIN.SCALE_FACTOR)
+                        scale_factor=config.TRAIN.SCALE_FACTOR,
+                        augmentation_type=config.TRAIN.get('AUGMENTATION_TYPE', None),
+                        aug_prob=config.TRAIN.get('AUG_PROB', 0.5)
+                        )
+    
 
     trainloader = torch.utils.data.DataLoader(
         train_dataset,
