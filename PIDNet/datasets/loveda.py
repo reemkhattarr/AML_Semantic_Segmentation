@@ -134,13 +134,15 @@ def get_augmentation(aug_type=None, prob=0.5):
     aug_list = []
     if 'flip' in aug_type:
         aug_list.append(A.HorizontalFlip(p=prob))
+        aug_list.append(A.VerticalFlip(p=prob))
     if 'blur' in aug_type:
         aug_list.append(A.GaussianBlur(blur_limit=(3, 7), p=prob))
     if 'multiply' in aug_type:
         aug_list.append(A.MultiplicativeNoise(multiplier=(0.9, 1.1), p=prob))
     if 'color' in aug_type:
         aug_list.append(A.ColorJitter(p=prob))
-    # Add more as needed
+    if 'rotate' in aug_type:
+        aug_list.append(A.RandomRotate90(p=prob))
     if aug_list:
         return A.Compose(aug_list)
     return None
