@@ -134,7 +134,6 @@ def get_augmentation(aug_type=None, prob=0.5):
     aug_list = []
     if 'flip' in aug_type:
         aug_list.append(A.HorizontalFlip(p=prob))
-        aug_list.append(A.VerticalFlip(p=prob))
     if 'blur' in aug_type:
         aug_list.append(A.GaussianBlur(blur_limit=(3, 7), p=prob))
     if 'multiply' in aug_type:

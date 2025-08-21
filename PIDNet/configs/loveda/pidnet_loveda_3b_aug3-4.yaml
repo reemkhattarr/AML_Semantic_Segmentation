@@ -2,7 +2,7 @@ CUDNN:
   BENCHMARK: true
   DETERMINISTIC: false
   ENABLED: true
-GPUS: ()
+GPUS: (0,)
 OUTPUT_DIR: 'output'
 LOG_DIR: 'log'
 WORKERS: 6
@@ -43,7 +43,7 @@ TRAIN:
   MULTI_SCALE: false
   IGNORE_LABEL: 255
   SCALE_FACTOR: 16
-  AUGMENTATION_TYPE: ['flip', 'rotate']
+  AUGMENTATION_TYPE: ['multiply', 'color']
   AUG_PROB: 0.5
 TEST:
   IMAGE_SIZE:

@@ -2,22 +2,22 @@ CUDNN:
   BENCHMARK: true
   DETERMINISTIC: false
   ENABLED: true
-GPUS: (0,1)
+GPUS: (0,)
 OUTPUT_DIR: 'output'
 LOG_DIR: 'log'
-WORKERS: 3
+WORKERS: 6
 PRINT_FREQ: 10
 
 DATASET:
-  DATASET: camvid
+  DATASET: loveda
   ROOT: data/
-  TEST_SET: 'list/camvid/val.lst'
-  TRAIN_SET: 'list/camvid/trainval.lst'
-  NUM_CLASSES: 11
+  TEST_SET: 'list/loveda/val_rural.lst'
+  TRAIN_SET: 'list/loveda/train_urban.lst'
+  NUM_CLASSES: 7
 MODEL:
-  NAME: pidnet_s
+  NAME: pidnet_small
   NUM_OUTPUTS: 2
-  PRETRAINED: "pretrained_models/cityscapes/PIDNet_S_Cityscapes_test.pt"
+  PRETRAINED: "./pretrained_models/imagenet/PIDNet_S_ImageNet.pth.tar"
 LOSS:
   USE_OHEM: true
   OHEMTHRES: 0.9
@@ -26,29 +26,31 @@ LOSS:
   SB_WEIGHTS: 1.0
 TRAIN:
   IMAGE_SIZE:
-  - 960
-  - 720
-  BASE_SIZE: 960
+  - 1024
+  - 1024
+  BASE_SIZE: 1024
   BATCH_SIZE_PER_GPU: 6
   SHUFFLE: true
   BEGIN_EPOCH: 0
-  END_EPOCH: 200
-  RESUME: false
+  END_EPOCH: 20
+  RESUME: true
   OPTIMIZER: sgd
-  LR: 0.005
+  LR: 0.01
   WD: 0.0005
-  MOMENTUM: 0.9
+  MOMENTUM: 0.8
   NESTEROV: false
-  FLIP: true
-  MULTI_SCALE: true
+  FLIP: false
+  MULTI_SCALE: false
   IGNORE_LABEL: 255
   SCALE_FACTOR: 16
+  AUGMENTATION_TYPE: color
+  AUG_PROB: 0.5
 TEST:
   IMAGE_SIZE:
-  - 960
-  - 720
-  BASE_SIZE: 960
-  BATCH_SIZE_PER_GPU: 1
+  - 1024
+  - 1024
+  BASE_SIZE: 1024
+  BATCH_SIZE_PER_GPU: 6
   FLIP_TEST: false
   MULTI_SCALE: false
   MODEL_FILE: ''
