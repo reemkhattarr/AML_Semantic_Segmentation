@@ -89,8 +89,6 @@ class LoveDA(BaseDataset):
             for k, v in self.label_mapping.items():
                 label[temp == k] = v
         return label
-    
-        return color_map.astype(np.uint8)
 
     def __getitem__(self, index):
         item = self.files[index]
@@ -166,6 +164,10 @@ train_urban_images_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data
 train_urban_masks_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Train/Urban/masks_png'
 train_urban_lst_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/loveda/train_urban.lst'
 
+train_rural_images_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Train/Rural/images_png'
+train_rural_masks_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Train/Rural/masks_png'
+train_rural_lst_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/loveda/train_rural.lst'
+
 val_urban_images_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Val/Urban/images_png'
 val_urban_masks_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/LoveDA/Val/Urban/masks_png'
 val_urban_lst_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/loveda/val_urban.lst'
@@ -175,5 +177,6 @@ val_rural_masks_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/data/Lo
 val_rural_lst_path = '/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/data/list/loveda/val_rural.lst'
 
 generate_lst(train_urban_images_path, train_urban_masks_path, train_urban_lst_path)
+generate_lst(train_rural_images_path, train_rural_masks_path, train_rural_lst_path)
 generate_lst(val_urban_images_path, val_urban_masks_path, val_urban_lst_path)
 generate_lst(val_rural_images_path, val_rural_masks_path, val_rural_lst_path)

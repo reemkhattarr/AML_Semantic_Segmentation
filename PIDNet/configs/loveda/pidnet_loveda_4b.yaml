@@ -11,7 +11,8 @@ PRINT_FREQ: 10
 DATASET:
   DATASET: loveda
   ROOT: data/
-  TEST_SET: 'list/loveda/val_rural.lst'
+  TEST_SET: 'list/loveda/val_rural.lst'             #soure (urban, labeled)
+  TRAIN_SET_TARGET: 'list/loveda/train_rural.lst'   #target (rural, unlabeled)
   TRAIN_SET: 'list/loveda/train_urban.lst'
   NUM_CLASSES: 7
 MODEL:
@@ -33,7 +34,7 @@ TRAIN:
   SHUFFLE: true
   BEGIN_EPOCH: 0
   END_EPOCH: 20
-  RESUME: true
+  RESUME: false
   OPTIMIZER: sgd
   LR: 0.01
   WD: 0.0005
@@ -45,6 +46,10 @@ TRAIN:
   SCALE_FACTOR: 16
   AUGMENTATION_TYPE: color
   AUG_PROB: 0.5
+  DACS_MIX_PROB: 0.7
+  DACS_CLASSMIX_FRAC: 0.5
+  DACS_LOSS_WEIGHT: 0.1
+  DACS_PSEUDO_THR: 0.968
 TEST:
   IMAGE_SIZE:
   - 1024
