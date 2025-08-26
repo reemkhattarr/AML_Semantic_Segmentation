@@ -171,14 +171,21 @@ def main():
     # -------------------------
     # Discriminatore + optimizer
     # -------------------------
-    D = FCDiscriminator(num_classes=config.DATASET.NUM_CLASSES)
-    D = nn.DataParallel(D, device_ids=gpus).cuda()
+    D1 = FCDiscriminator(num_classes=config.DATASET.NUM_CLASSES)
+    D1 = nn.DataParallel(D1, device_ids=gpus).cuda()
+
+    D2 = FCDiscriminator(num_classes=config.DATASET.NUM_CLASSES)
+    D2 = nn.DataParallel(D2, device_ids=gpus).cuda()
 
     # usa il LR_D dal config
     lr_d = getattr(config.TRAIN, 'LR_D', 1e-4)
-    optimizer_D = torch.optim.Adam(D.parameters(), lr=lr_d, betas=(0.9, 0.99))
+    optimizer_D1 = torch.optim.Adam(D1.parameters(), lr=lr_d, betas=(0.9, 0.99))
+    optimizer_D2 = torch.optim.Adam(D2.parameters(), lr=lr_d, betas=(0.9, 0.99))
     bce_adv = nn.BCEWithLogitsLoss().cuda()
     lambda_adv = getattr(config.LOSS, 'LAMBDA_ADV', 0.01)
+
+    optimizer_D1.zero_grad()
+    optimizer_D2.zero_grad()
 
     # Resume (facoltativo): separiamo i checkpoint ADV per non intaccare il training classico
     best_mIoU = 0
@@ -218,8 +225,8 @@ def main():
         #           model, D, bce_adv, lambda_adv, writer_dict)
 
         train_adv(config, epoch, end_epoch, epoch_iters, config.TRAIN.LR, num_iters,
-                  trainloader, targetloader, optimizer, optimizer_D,
-                  model, D, writer_dict)        
+                  trainloader, targetloader, optimizer, optimizer_D1, optimizer_D2,
+                  model, D1, D2, writer_dict)        
 
         valid_loss, mean_IoU, IoU_array = validate(config, testloader, model, writer_dict)
 
@@ -228,9 +235,9 @@ def main():
             'epoch': epoch+1,
             'best_mIoU': best_mIoU,
             'seg_state': model.module.state_dict(),
-            'disc_state': D.module.state_dict(),
+            'disc_state': D1.module.state_dict(),
             'optim_seg': optimizer.state_dict(),
-            'optim_D': optimizer_D.state_dict(),
+            'optim_D': optimizer_D1.state_dict(),
         }, ckpt_path)
 
         if mean_IoU > best_mIoU:

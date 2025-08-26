@@ -4,19 +4,27 @@ from tqdm import tqdm
 from utils.utils import AverageMeter, adjust_learning_rate, get_confusion_matrix
 from utils.dacs_utils import generate_pseudo_labels, classmix, generate_edge_map
 import numpy as np
-import logging  # FIXED: Added missing import
-import os      # FIXED: Added missing import
+import logging  
+import os   
 
 
-'''
-def update_ema(student_model, teacher_model, alpha=0.99):
-    for student_param, teacher_param in zip(student_model.parameters(), teacher_model.parameters()):
-        teacher_param.data.mul_(alpha).add_(student_param.data, alpha=1 - alpha)
-'''
+def update_ema_variables(ema_model, student_model, alpha_teacher, iteration):
+    # Use the "true" average until the exponential average is more correct
+    alpha_teacher = min(1 - 1 / (iteration + 1), alpha_teacher)
+    for ema_param, param in zip(ema_model.parameters(), student_model.parameters()):
+        ema_param.data[:] = alpha_teacher * ema_param.data[:] + (1 - alpha_teacher) * param.data[:]
+
+
+def get_dacs_loss_weight(base_weight, cur_iter, rampup_iter=5000):
+    if cur_iter < rampup_iter:
+        return base_weight * float(cur_iter) / rampup_iter
+    else:
+        return base_weight
+
 
 def train_dacs(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
-               dual_loader, optimizer, model, writer_dict,
-               dacs_prob=0.7, pseudo_thr=0.968, dacs_loss_weight=0.1):
+               dual_loader, optimizer, model, teacher_model, writer_dict,
+                pseudo_thr=0.968, dacs_loss_weight=0.1):
     model.train()
     batch_time = AverageMeter()
     ave_loss = AverageMeter()
@@ -43,39 +51,52 @@ def train_dacs(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
         acc  = acc.mean()
 
         # 2. Pseudo-label target
-        # Ensure model is in eval mode for pseudo-labels
-        model.eval()
-        tgt_pseudo_lbl = generate_pseudo_labels(model.module.model, tgt_img, threshold=pseudo_thr, ignore_label=config.TRAIN.IGNORE_LABEL)
-        model.train()
+        teacher_model.eval()
+        with torch.no_grad():
+            tgt_pseudo_lbl, tgt_weight_mask = generate_pseudo_labels(
+                teacher_model, tgt_img, threshold=pseudo_thr
+            )
+        teacher_model.train()
         
         valid_pixels = (tgt_pseudo_lbl != config.TRAIN.IGNORE_LABEL).sum().item()
         if valid_pixels == 0:
             # Skip this iteration if no valid pixels in pseudo labels
             continue
+        
+        source_weight = torch.ones_like(src_lbl, dtype=torch.float)
 
         # 3. DACS mixing (ClassMix)
-        if np.random.rand() < dacs_prob:
-            mixed_img, mixed_lbl, source_mask = classmix(
-                src_img, src_lbl, tgt_img, tgt_pseudo_lbl,
-                ignore_label=config.TRAIN.IGNORE_LABEL,
-                classmix_frac=config.TRAIN.DACS_CLASSMIX_FRAC
-            )
-            
-            valid_mixed_pixels = (mixed_lbl != config.TRAIN.IGNORE_LABEL).sum().item()
-            if valid_mixed_pixels == 0:
-                continue  # Skip batch if all pixels are ignore_label
-            
-            mixed_bd = generate_edge_map(mixed_lbl, edge_size=3, ignore_label=config.TRAIN.IGNORE_LABEL) 
-            if (mixed_bd != config.TRAIN.IGNORE_LABEL).sum().item() == 0:
-                print("Warning: All boundary labels are ignore_label after mixing. Skipping batch.")
-            mixed_losses, _, _, _ = model(mixed_img, mixed_lbl, mixed_bd)
-            mixed_loss = mixed_losses.mean()
-            loss = loss + dacs_loss_weight * mixed_loss
+        mixed_img, mixed_lbl, source_mask, mixed_weight = classmix(
+            src_img, src_lbl, tgt_img, tgt_pseudo_lbl,
+            source_weight=source_weight,
+            target_weight=tgt_weight_mask,
+            ignore_label=config.TRAIN.IGNORE_LABEL,
+            classmix_frac=config.TRAIN.DACS_CLASSMIX_FRAC
+        )
+        
+        valid_mixed_pixels = (mixed_lbl != config.TRAIN.IGNORE_LABEL).sum().item()
+        if valid_mixed_pixels == 0:
+            continue  # Skip batch if all pixels are ignore_label
+        
+        mixed_bd = generate_edge_map(mixed_lbl, edge_size=3, ignore_label=config.TRAIN.IGNORE_LABEL) 
+        if (mixed_bd != config.TRAIN.IGNORE_LABEL).sum().item() == 0:
+            print("Warning: All boundary labels are ignore_label after mixing. Skipping batch.")
+        mixed_losses, _, _, _ = model(mixed_img, mixed_lbl, mixed_bd)
+        mixed_loss = (mixed_losses * mixed_weight).sum() / (mixed_weight.sum() + 1e-6)
+        
+        cur_dacs_loss_weight = get_dacs_loss_weight(dacs_loss_weight, i_iter + cur_iters)
+        loss = loss + cur_dacs_loss_weight * mixed_loss
+
 
         model.zero_grad()
         loss.backward()
         optimizer.step()
         
+        # 4. Update teacher model (EMA)
+        # update_ema(model.module.model, teacher_model.module, alpha=0.99)
+        
+        alpha_teacher = 0.99
+        update_ema_variables(teacher_model.module, model.module.model, alpha_teacher, i_iter + cur_iters)
 
         # measure elapsed time
         toc.record()
@@ -93,6 +114,8 @@ def train_dacs(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
                                   base_lr,
                                   num_iters,
                                   i_iter+cur_iters)
+        
+        #teacher_model.load_state_dict(model.module.model.state_dict())
 
         if i_iter % config.PRINT_FREQ == 0:
             print(f'Epoch: [{epoch}/{num_epoch}] Iter:[{i_iter}/{epoch_iters}], '

@@ -20,11 +20,22 @@ from utils.utils import create_logger, FullModel
 from datasets.dual_domain_loader import DualDomainLoader
 
 
+def create_ema_model(student_model):
+    imgnet = 'imagenet' in config.MODEL.PRETRAINED
+    gpus = list(config.GPUS)
+    ema_model = models.pidnet.get_seg_model(config, imgnet_pretrained=imgnet)
+    for ema_param, param in zip(ema_model.parameters(), student_model.module.model.parameters()):
+        ema_param.data[:] = param.data[:].clone()
+    ema_model = torch.nn.DataParallel(ema_model, device_ids=gpus).cuda()
+    for param in ema_model.parameters():
+        param.detach_()
+    return ema_model
+        
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Train segmentation network with DACS')
     parser.add_argument('--cfg', help='experiment configure file name', default="configs/loveda/pidnet_loveda_4b.yaml", type=str)
     parser.add_argument('--seed', type=int, default=304)
-    parser.add_argument('--dacs-mix-prob', type=float, default=0.7)
     parser.add_argument('--dacs-classmix-frac', type=float, default=0.5)
     parser.add_argument('--dacs-loss-weight', type=float, default=0.1)
     parser.add_argument('--dacs-pseudo-thr', type=float, default=0.968)
@@ -127,8 +138,20 @@ def main():
         sem_criterion = CrossEntropy(ignore_label=config.TRAIN.IGNORE_LABEL,
                                      weight=src_dataset.class_weights)
     bd_criterion = BondaryLoss()
+    
+    # Wrap student model in FullModel and DataParallel
     model = FullModel(model, sem_criterion, bd_criterion)
     model = torch.nn.DataParallel(model, device_ids=gpus).cuda()
+    
+    '''
+    # Teacher model: just the backbone, not FullModel
+    teacher_model = models.pidnet.get_seg_model(config, imgnet_pretrained=imgnet)
+    teacher_model = torch.nn.DataParallel(teacher_model, device_ids=gpus).cuda()
+    teacher_model.module.load_state_dict(model.module.model.state_dict())
+    teacher_model.eval()
+    '''
+    
+    teacher_model = create_ema_model(model)
 
     # optimizer
     params_dict = dict(model.named_parameters())
@@ -149,16 +172,18 @@ def main():
     end_epoch = config.TRAIN.END_EPOCH
 
     for epoch in range(last_epoch, end_epoch):
-        train_dacs(config, epoch, end_epoch, epoch_iters, config.TRAIN.LR, end_epoch*epoch_iters,
-           dual_loader, optimizer, model, writer_dict,
-           dacs_prob=args.dacs_mix_prob,
-           pseudo_thr=args.dacs_pseudo_thr,
-           dacs_loss_weight=args.dacs_loss_weight)
+        train_dacs(
+            config, epoch, end_epoch, epoch_iters, config.TRAIN.LR, end_epoch * epoch_iters,
+            dual_loader, optimizer, model, teacher_model, writer_dict,
+            pseudo_thr=args.dacs_pseudo_thr,
+            dacs_loss_weight=args.dacs_loss_weight
+        )
 
 
         # Validate student model
         valid_loss, mean_IoU, IoU_array = validate(config, testloader, model, writer_dict)
         
+
         logger.info('=> saving checkpoint to {}'.format(final_output_dir + 'checkpoint.pth.tar'))
         torch.save({
             'epoch': epoch+1,
@@ -171,11 +196,11 @@ def main():
             torch.save(model.module.state_dict(),
                     os.path.join(final_output_dir, 'best.pt'))
 
-        msg = 'Loss: {:.3f}, MeanIU: {: 4.4f}, Best_mIoU: {: 4.4f}'.format(
-                    valid_loss, mean_IoU, best_mIoU)
+        msg = 'Loss: {:.3f}, MeanIU: {:4.4f}, Best_mIoU: {:4.4f}'.format(
+                valid_loss, mean_IoU, best_mIoU)
         logging.info(msg)
-        logging.info(IoU_array)
-
+        logging.info('IoU: {}'.format(IoU_array))
+    
     torch.save(model.module.state_dict(),
             os.path.join(final_output_dir, 'final_state.pt'))
     writer_dict['writer'].close()
