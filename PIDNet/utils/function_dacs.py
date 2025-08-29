@@ -7,6 +7,48 @@ import numpy as np
 import logging  
 import os   
 
+import albumentations as A
+
+# strong augmentation pipeline
+strong_aug = A.Compose([
+    A.ColorJitter(p=0.8),
+    # A.GaussianBlur(blur_limit=(3, 7), p=0.5),
+    # A.HorizontalFlip(p=0.5),
+])
+
+IMAGENET_MEAN = [0.485, 0.456, 0.406]
+IMAGENET_STD  = [0.229, 0.224, 0.225]
+
+def denorm_and_augment(img_tensor, aug=strong_aug):
+    """
+    img_tensor: (C, H, W), normalized (ImageNet)
+    Returns: (C, H, W), normalized (ImageNet), after augmentation
+    """
+    # 1. Denormalize to [0,1]
+    mean = torch.tensor(IMAGENET_MEAN, device=img_tensor.device).view(-1, 1, 1)
+    std = torch.tensor(IMAGENET_STD, device=img_tensor.device).view(-1, 1, 1)
+    img = img_tensor * std + mean  # [0,1]
+    img = img.clamp(0, 1)
+
+    # 2. To numpy, [0,255] uint8
+    img_np = (img.cpu().numpy() * 255).astype(np.uint8)
+    img_np = np.transpose(img_np, (1, 2, 0))  # (H, W, C)
+
+    # 3. Apply augmentation
+    augmented = aug(image=img_np)
+    img_aug = augmented['image']
+
+    # 4. Back to float32 [0,1]
+    img_aug = img_aug.astype(np.float32) / 255.0
+    img_aug = np.transpose(img_aug, (2, 0, 1))  # (C, H, W)
+
+    # 5. Re-normalize
+    img_aug = torch.tensor(img_aug, dtype=torch.float, device=img_tensor.device)
+    img_aug = (img_aug - mean) / std
+
+    return img_aug
+
+
 
 def update_ema_variables(ema_model, student_model, alpha_teacher, iteration):
     # Use the "true" average until the exponential average is more correct
@@ -78,7 +120,7 @@ def train_dacs(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
         if valid_mixed_pixels == 0:
             continue  # Skip batch if all pixels are ignore_label
         
-        mixed_bd = generate_edge_map(mixed_lbl, edge_size=3, ignore_label=config.TRAIN.IGNORE_LABEL) 
+        mixed_bd = generate_edge_map(mixed_lbl, mixed_weight, edge_size=3, ignore_label=config.TRAIN.IGNORE_LABEL) 
         if (mixed_bd != config.TRAIN.IGNORE_LABEL).sum().item() == 0:
             print("Warning: All boundary labels are ignore_label after mixing. Skipping batch.")
         mixed_losses, _, _, _ = model(mixed_img, mixed_lbl, mixed_bd)
@@ -87,6 +129,24 @@ def train_dacs(config, epoch, num_epoch, epoch_iters, base_lr, num_iters,
         cur_dacs_loss_weight = get_dacs_loss_weight(dacs_loss_weight, i_iter + cur_iters)
         loss = loss + cur_dacs_loss_weight * mixed_loss
 
+        # === Consistency Regularization ===
+        # a. Apply strong augmentation to target images (on normalized tensors)
+        tgt_img_strong = torch.stack([
+            denorm_and_augment(img) for img in tgt_img
+        ])
+        
+        # b. Get student prediction on strongly augmented images
+        student_logits = model.module.model(tgt_img_strong)
+        if isinstance(student_logits, (list, tuple)):
+            student_logits = student_logits[-2] if len(student_logits) > 1 else student_logits[0]
+        student_logits = F.interpolate(student_logits, size=tgt_img.shape[2:], mode='bilinear', align_corners=False)
+        
+        # c. Consistency loss (cross-entropy, weighted by confidence)
+        consistency_loss = F.cross_entropy(student_logits, tgt_pseudo_lbl, reduction='none', ignore_index=config.TRAIN.IGNORE_LABEL)
+        consistency_loss = (consistency_loss * tgt_weight_mask).sum() / (tgt_weight_mask.sum() + 1e-6)
+        consistency_weight = min(0.1, (i_iter + cur_iters) / 10000 * 0.1)  # ramp up to 0.1 over 10k iters
+        # d. Add to total loss (with a weight, e.g. 1.0 or tune as needed)
+        loss = loss + consistency_weight * consistency_loss
 
         model.zero_grad()
         loss.backward()

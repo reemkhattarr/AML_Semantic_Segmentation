@@ -34,9 +34,16 @@ class FullModel(nn.Module):
     acc = acc_sum.float() / (pixel_sum.float() + 1e-10)
     return acc
 
-  def forward(self, inputs, labels, bd_gt, *args, **kwargs):
+  def forward(self, inputs, labels=None, bd_gt=None, *args, **kwargs):
     
     outputs = self.model(inputs, *args, **kwargs)
+    
+    if labels is None or bd_gt is None:
+        # Target domain: no labels, skip loss computation
+        dummy_loss = torch.tensor(0.0, device=inputs.device)
+        dummy_acc = torch.tensor(0.0, device=inputs.device)
+        return dummy_loss.unsqueeze(0), outputs[:-1], dummy_acc, []
+
     
     h, w = labels.size(1), labels.size(2)
     ph, pw = outputs[0].size(2), outputs[0].size(3)

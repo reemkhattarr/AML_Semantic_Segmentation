@@ -12,26 +12,24 @@ DATASET:
   DATASET: loveda
   ROOT: data/
   TEST_SET: 'list/loveda/val_rural.lst'
+  TRAIN_SET_TARGET: 'list/loveda/train_rural.lst'
   TRAIN_SET: 'list/loveda/train_urban.lst'
-  TRAIN_SET_TARGET: 'list/loveda/train_rural.lst'   # <-- AGGIUNTO
   NUM_CLASSES: 7
-
 MODEL:
   NAME: pidnet_small
   NUM_OUTPUTS: 2
   PRETRAINED: "./pretrained_models/imagenet/PIDNet_S_ImageNet.pth.tar"
-
 LOSS:
   USE_OHEM: true
   OHEMTHRES: 0.9
   OHEMKEEP: 131072
   BALANCE_WEIGHTS: [0.4, 1.0]
   SB_WEIGHTS: 1.0
-  LAMBDA_ADV: 0.002
-  #LAMBDA_ADV: 0.001                       # <-- AGGIUNTO
-
+  LAMBDA_ADV: 0.001
 TRAIN:
-  IMAGE_SIZE: [1024, 1024]
+  IMAGE_SIZE:
+  - 1024
+  - 1024
   BASE_SIZE: 1024
   BATCH_SIZE_PER_GPU: 6
   SHUFFLE: true
@@ -49,15 +47,14 @@ TRAIN:
   SCALE_FACTOR: 16
   AUGMENTATION_TYPE: color
   AUG_PROB: 0.5
-  LR_D: 0.0001      # lr iniziale del discriminatore
-  POWER_D: 0.9      # esponente del decay (puoi tenerlo diverso da G)
-  #POWER_D: 0.8
-
+  LAMBDA_ADV: 0.001
 TEST:
-  IMAGE_SIZE: [1024, 1024]
+  IMAGE_SIZE:
+  - 1024
+  - 1024
   BASE_SIZE: 1024
   BATCH_SIZE_PER_GPU: 6
   FLIP_TEST: false
   MULTI_SCALE: false
-  MODEL_FILE: '/content/drive/MyDrive/AML_Semantic_Segmentation/PIDNet/output/loveda/pidnet_loveda_4a/best_adv.pt'
+  MODEL_FILE: ''
   OUTPUT_INDEX: 1

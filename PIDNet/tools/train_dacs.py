@@ -106,7 +106,8 @@ def main():
         crop_size=crop_size,
         scale_factor=config.TRAIN.SCALE_FACTOR,
         #apply augmentations to target dataset?
-        augmentation_type=config.TRAIN.get('AUGMENTATION_TYPE', None),
+        augmentation_type=None,
+        #augmentation_type=config.TRAIN.get('AUGMENTATION_TYPE', None),
         aug_prob=config.TRAIN.get('AUG_PROB', 0.5)
     )
     tgt_loader = torch.utils.data.DataLoader(
@@ -143,13 +144,6 @@ def main():
     model = FullModel(model, sem_criterion, bd_criterion)
     model = torch.nn.DataParallel(model, device_ids=gpus).cuda()
     
-    '''
-    # Teacher model: just the backbone, not FullModel
-    teacher_model = models.pidnet.get_seg_model(config, imgnet_pretrained=imgnet)
-    teacher_model = torch.nn.DataParallel(teacher_model, device_ids=gpus).cuda()
-    teacher_model.module.load_state_dict(model.module.model.state_dict())
-    teacher_model.eval()
-    '''
     
     teacher_model = create_ema_model(model)
 

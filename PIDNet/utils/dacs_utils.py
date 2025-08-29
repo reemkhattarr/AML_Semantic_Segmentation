@@ -2,22 +2,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 import random
-
-# def generate_pseudo_labels(model, images, threshold=0.968, ignore_label=255):
-#     model.eval()
-#     with torch.no_grad():
-#         outputs = model(images)
-#         if isinstance(outputs, (list, tuple)):
-#             # select the main output (usually the second last)
-#             outputs = outputs[-2] if len(outputs) > 1 else outputs[0]
-#         if outputs.shape[2:] != images.shape[2:]:
-#             outputs = F.interpolate(outputs, size=images.shape[2:], mode='bilinear', align_corners=False)
-#         probs = F.softmax(outputs, dim=1)
-#         conf, pseudo_labels = torch.max(probs, dim=1)
-#         mask = conf.ge(threshold).float()
-#         pseudo_labels[mask == 0] = ignore_label
-#     model.train()
-#     return pseudo_labels
+from scipy.ndimage import binary_dilation, binary_erosion
     
 def generate_pseudo_labels(model, images, threshold=0.968, ignore_label=255):
     model.eval()
@@ -29,59 +14,11 @@ def generate_pseudo_labels(model, images, threshold=0.968, ignore_label=255):
             outputs = F.interpolate(outputs, size=images.shape[2:], mode='bilinear', align_corners=False)
         probs = F.softmax(outputs, dim=1)
         conf, pseudo_labels = torch.max(probs, dim=1)
-        mask = conf.ge(threshold).float()
+        mask = conf.ge(threshold)
+        pseudo_labels[~mask] = ignore_label
+        mask = mask.float()
     model.train()
     return pseudo_labels, mask
-
-
-
-# def classmix(source_img, source_lbl, target_img, target_plbl, ignore_label=255, classmix_frac=0.5):
-#     """
-#     ClassMix: Mixes source and target images/labels based on randomly selected classes from the source label.
-#     Args:
-#         source_img: [B, C, H, W] Source images
-#         source_lbl: [B, H, W]    Source labels
-#         target_img: [B, C, H, W] Target images
-#         target_plbl: [B, H, W]   Target pseudo-labels
-#         ignore_label: int, label to ignore
-#     Returns:
-#         mixed_img: [B, C, H, W]
-#         mixed_lbl: [B, H, W]
-#         source_mask: [B, H, W] (bool) mask of source pixels in the mix
-#     """
-#     B, _, H, W = source_img.shape
-#     mixed_img = source_img.clone()
-#     mixed_lbl = source_lbl.clone()
-#     source_mask = torch.zeros_like(source_lbl, dtype=torch.bool)
-
-#     for i in range(B):
-#         # Get unique classes in this source label (excluding ignore)
-#         classes = torch.unique(source_lbl[i])
-#         classes = classes[classes != ignore_label]
-#         # if we want to ignore background
-#         # classes = classes[(classes != 0)]
-#         if len(classes) == 0:
-#             continue
-#         for attempt in range(5):
-#             n_select = max(1, int(len(classes) * classmix_frac))
-#             selected = np.random.choice(classes.cpu(), n_select, replace=False)
-#             mask = torch.zeros_like(source_lbl[i], dtype=torch.bool)
-#             for c in selected:
-#                 mask |= (source_lbl[i] == c)
-#             if mask.sum() > 0:
-#                 break
-#         else:
-#             # If after max_tries the mask is still empty, just use all source
-#             mask = torch.ones_like(source_lbl[i], dtype=torch.bool)
-#         # Mix: where mask is True, keep source; where False, use target
-#         mask_3ch = mask.unsqueeze(0).repeat(source_img.size(1), 1, 1)
-#         mixed_img[i] = torch.where(mask_3ch, source_img[i], target_img[i])
-#         mixed_lbl[i] = torch.where(mask, source_lbl[i], target_plbl[i])
-#         # set ignore label where either input is ignore
-#         mixed_lbl[i][(source_lbl[i] == ignore_label) | (target_plbl[i] == ignore_label)] = ignore_label
-#         source_mask[i] = mask
-
-#     return mixed_img, mixed_lbl, source_mask
 
 
 def classmix(source_img, source_lbl, target_img, target_plbl, 
@@ -139,20 +76,34 @@ def classmix(source_img, source_lbl, target_img, target_plbl,
         return mixed_img, mixed_lbl, source_mask
 
 
-
-
-def generate_edge_map(label, edge_size=3, ignore_label=255):
+# def generate_edge_map(label, edge_size=3, ignore_label=255):
+#     # label: [B, H, W]
+#     # Returns: [B, H, W] binary edge map
+#     edge = torch.zeros_like(label, dtype=torch.float)
+#     for i in range(label.size(0)):
+#         lbl = label[i].cpu().numpy()
+#         # Use simple morphological gradient (dilation - erosion)
+#         from scipy.ndimage import binary_dilation, binary_erosion
+#         mask = (lbl != ignore_label)
+#         dil = binary_dilation(mask, iterations=edge_size)
+#         ero = binary_erosion(mask, iterations=edge_size)
+#         edge_map = (dil ^ ero).astype(np.float32)
+#         edge[i] = torch.from_numpy(edge_map)
+#     return edge
+    
+def generate_edge_map(label, confidence_mask, edge_size=3, ignore_label=255):
     # label: [B, H, W]
-    # Returns: [B, H, W] binary edge map
-    edge = torch.zeros_like(label, dtype=torch.float)
+    # confidence_mask: [B, H, W] (bool or float, 1=trusted, 0=untrusted)
+    edge = torch.full_like(label, ignore_label, dtype=torch.float)
     for i in range(label.size(0)):
         lbl = label[i].cpu().numpy()
-        # Use simple morphological gradient (dilation - erosion)
-        from scipy.ndimage import binary_dilation, binary_erosion
-        mask = (lbl != ignore_label)
+        mask = (lbl != ignore_label) & (confidence_mask[i].cpu().numpy() > 0.5)
         dil = binary_dilation(mask, iterations=edge_size)
         ero = binary_erosion(mask, iterations=edge_size)
         edge_map = (dil ^ ero).astype(np.float32)
+        # Only keep edges where both sides are confident
+        edge_map[~mask] = ignore_label
         edge[i] = torch.from_numpy(edge_map)
     return edge
+
 
