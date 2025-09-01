@@ -1,0 +1,9 @@
+INFO train.py(208): n_workers_train: 2
+INFO train.py(209): n_workers_val: 1
+INFO train.py(210): use_boundary_2: False
+INFO train.py(211): use_boundary_4: False
+INFO train.py(212): use_boundary_8: True
+INFO train.py(213): use_boundary_16: False
+INFO train.py(214): mode: train
+INFO train.py(457): it: 50/60000, lr: 0.000014, loss: 7.8466, boundery_bce_loss: 0.8277, boundery_dice_loss: 0.9505, eta: 9 days, 14:31:32, time: 678.2993
+INFO train.py(457): it: 100/60000, lr: 0.000020, loss: 7.0222, boundery_bce_loss: 0.6590, boundery_dice_loss: 0.9503, eta: 6 days, 12:38:55, time: 253.7320
