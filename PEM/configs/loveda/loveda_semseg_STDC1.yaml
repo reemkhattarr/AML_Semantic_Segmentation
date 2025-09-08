@@ -1,0 +1,9 @@
+_BASE_: loveda_semseg_R50.yaml
+
+MODEL:
+  BACKBONE:
+    NAME: "D2STDCnet"          # usa backbone STDC in Detectron2/PEM
+  STDC:
+    LAYERS: [2, 2, 2]          # STDC1
+  WEIGHTS: "./pretrained_models/STDC1.pkl"  # pesi convertiti
+VERSION: 2

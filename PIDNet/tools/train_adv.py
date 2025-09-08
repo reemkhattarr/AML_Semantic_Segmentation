@@ -23,8 +23,9 @@ import datasets
 from configs import config
 from configs import update_config
 from utils.criterion import CrossEntropy, OhemCrossEntropy, BondaryLoss
-from utils.function import train, validate
+from utils.function_adv_new import train_adversarial, validate
 from utils.utils import create_logger, FullModel
+from models.discriminator import FCDiscriminator
 
 
 def parse_args():
@@ -32,7 +33,7 @@ def parse_args():
     
     parser.add_argument('--cfg',
                         help='experiment configure file name',
-                        default="configs/loveda/pidnet_loveda_2b.yaml",
+                        default="configs/loveda/pidnet_loveda_4a.yaml",
                         type=str)
     parser.add_argument('--seed', type=int, default=304)    
     parser.add_argument('opts',
@@ -82,28 +83,59 @@ def main():
     batch_size = config.TRAIN.BATCH_SIZE_PER_GPU * len(gpus)
     # prepare data
     crop_size = (config.TRAIN.IMAGE_SIZE[1], config.TRAIN.IMAGE_SIZE[0])
-    train_dataset = eval('datasets.'+config.DATASET.DATASET)(
-                        root=config.DATASET.ROOT,
-                        list_path=config.DATASET.TRAIN_SET,
-                        num_classes=config.DATASET.NUM_CLASSES,
-                        multi_scale=config.TRAIN.MULTI_SCALE,
-                        flip=config.TRAIN.FLIP,
-                        ignore_label=config.TRAIN.IGNORE_LABEL,
-                        base_size=config.TRAIN.BASE_SIZE,
-                        crop_size=crop_size,
-                        scale_factor=config.TRAIN.SCALE_FACTOR,
-                        augmentation_type=config.TRAIN.get('AUGMENTATION_TYPE', None),
-                        aug_prob=config.TRAIN.get('AUG_PROB', 0.5)
-                        )
     
-
-    trainloader = torch.utils.data.DataLoader(
-        train_dataset,
+    # Prepare source dataset and dataloader (urban, labeled)
+    train_dataset_source = eval('datasets.'+config.DATASET.DATASET)(
+        root=config.DATASET.ROOT,
+        list_path=config.DATASET.TRAIN_SET,  # urban list
+        num_classes=config.DATASET.NUM_CLASSES,
+        multi_scale=config.TRAIN.MULTI_SCALE,
+        flip=config.TRAIN.FLIP,
+        ignore_label=config.TRAIN.IGNORE_LABEL,
+        base_size=config.TRAIN.BASE_SIZE,
+        crop_size=crop_size,
+        scale_factor=config.TRAIN.SCALE_FACTOR,
+        augmentation_type=config.TRAIN.get('AUGMENTATION_TYPE', None),
+        aug_prob=config.TRAIN.get('AUG_PROB', 0.5)
+    )
+    trainloader_source = torch.utils.data.DataLoader(
+        train_dataset_source,
         batch_size=batch_size,
         shuffle=config.TRAIN.SHUFFLE,
         num_workers=config.WORKERS,
         pin_memory=False,
         drop_last=True)
+        
+    # Prepare target dataset and dataloader (rural, unlabeled)
+    train_dataset_target = eval('datasets.'+config.DATASET.DATASET)(
+        root=config.DATASET.ROOT,
+        list_path=config.DATASET.TRAIN_SET_TARGET,  # rural list
+        num_classes=config.DATASET.NUM_CLASSES,
+        multi_scale=False,
+        flip=False,
+        ignore_label=config.TRAIN.IGNORE_LABEL,
+        base_size=config.TRAIN.BASE_SIZE,
+        crop_size=crop_size,
+        scale_factor=config.TRAIN.SCALE_FACTOR,
+        augmentation_type=None,
+        aug_prob=0.0
+    )
+    trainloader_target = torch.utils.data.DataLoader(
+        train_dataset_target,
+        batch_size=batch_size,
+        shuffle=config.TRAIN.SHUFFLE,
+        num_workers=config.WORKERS,
+        pin_memory=False,
+        drop_last=True)
+        
+    # Initialize discriminator and optimizer
+    model_domain = FCDiscriminator(num_classes=config.DATASET.NUM_CLASSES)
+    model_domain = model_domain.cuda()
+    domain_optimizer = torch.optim.Adam(
+        model_domain.parameters(),
+        lr=config.TRAIN.LR_D,
+        weight_decay=0
+    )
 
 
     test_size = (config.TEST.IMAGE_SIZE[1], config.TEST.IMAGE_SIZE[0])
@@ -129,10 +161,10 @@ def main():
         sem_criterion = OhemCrossEntropy(ignore_label=config.TRAIN.IGNORE_LABEL,
                                         thres=config.LOSS.OHEMTHRES,
                                         min_kept=config.LOSS.OHEMKEEP,
-                                        weight=train_dataset.class_weights)
+                                        weight=train_dataset_source.class_weights)
     else:
         sem_criterion = CrossEntropy(ignore_label=config.TRAIN.IGNORE_LABEL,
-                                    weight=train_dataset.class_weights)
+                                    weight=train_dataset_source.class_weights)
 
     bd_criterion = BondaryLoss()
     
@@ -153,7 +185,7 @@ def main():
     else:
         raise ValueError('Only Support SGD optimizer')
 
-    epoch_iters = int(train_dataset.__len__() / config.TRAIN.BATCH_SIZE_PER_GPU / len(gpus))
+    epoch_iters = int(train_dataset_source.__len__() / config.TRAIN.BATCH_SIZE_PER_GPU / len(gpus))
         
     best_mIoU = 0
     last_epoch = 0
@@ -180,18 +212,27 @@ def main():
     epochs_no_improvement = 0
     
     for epoch in range(last_epoch, real_end):
+            
+        current_trainloader_source = trainloader_source
+        if current_trainloader_source.sampler is not None and hasattr(current_trainloader_source.sampler, 'set_epoch'):
+            current_trainloader_source.sampler.set_epoch(epoch)
+            
+        current_trainloader_target = trainloader_target
+        if current_trainloader_target.sampler is not None and hasattr(current_trainloader_target.sampler, 'set_epoch'):
+            current_trainloader_target.sampler.set_epoch(epoch)
 
-        current_trainloader = trainloader
-        if current_trainloader.sampler is not None and hasattr(current_trainloader.sampler, 'set_epoch'):
-            current_trainloader.sampler.set_epoch(epoch)
 
-        train(config, epoch, config.TRAIN.END_EPOCH, 
-                epoch_iters, config.TRAIN.LR, num_iters,
-                trainloader, optimizer, model, writer_dict)
+        # Train adversarially with both loaders and optimizers
+        train_adversarial(config, epoch, config.TRAIN.END_EPOCH, epoch_iters,
+                          config.TRAIN.LR, num_iters,
+                          trainloader_source, trainloader_target,
+                          optimizer, domain_optimizer,
+                          model, model_domain,
+                          writer_dict)
 
-        if flag_rm == 1 or (epoch % 5 == 0 and epoch < real_end - 100) or (epoch >= real_end - 100):
-            valid_loss, mean_IoU, IoU_array = validate(config, 
-                        testloader, model, writer_dict)
+        # Validation as usual
+        valid_loss, mean_IoU, IoU_array = validate(config, testloader, model, writer_dict)
+        
         if flag_rm == 1:
             flag_rm = 0
 
@@ -236,13 +277,6 @@ def main():
     logger.info('Hours: %d' % int((end-start)/3600))
     logger.info('Done')
 
-    writer_dict['writer'].close()
-    end = timeit.default_timer()
-    logger.info('Hours: %d' % int((end-start)/3600))
-    logger.info('Done')
 
 if __name__ == '__main__':
     main()
-
-
-# python train.py --cfg pidnet_loveda_urban.yaml

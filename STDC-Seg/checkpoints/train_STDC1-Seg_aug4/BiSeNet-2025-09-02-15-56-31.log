@@ -1,0 +1,191 @@
+INFO train.py(229): n_workers_train: 2
+INFO train.py(230): n_workers_val: 1
+INFO train.py(231): use_boundary_2: False
+INFO train.py(232): use_boundary_4: False
+INFO train.py(233): use_boundary_8: True
+INFO train.py(234): use_boundary_16: False
+INFO train.py(235): mode: train
+INFO train.py(266): augmentations: color
+INFO train.py(267): aug_prob: 0.5
+INFO train.py(517): it: 18/1440, lr: 0.000051, loss: 8.3251, boundery_bce_loss: 0.9256, boundery_dice_loss: 0.9480, eta: 0:38:13, time: 27.3992
+INFO train.py(517): it: 36/1440, lr: 0.000287, loss: 7.2468, boundery_bce_loss: 0.6562, boundery_dice_loss: 0.9484, eta: 0:39:44, time: 32.0020
+INFO train.py(517): it: 54/1440, lr: 0.001616, loss: 5.6357, boundery_bce_loss: 0.2026, boundery_dice_loss: 0.9520, eta: 0:59:07, time: 76.1588
+INFO train.py(517): it: 72/1440, lr: 0.009085, loss: 5.0086, boundery_bce_loss: 0.1340, boundery_dice_loss: 0.8908, eta: 1:06:07, time: 70.1944
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 72, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter72_mIoU_0.2192.pth
+INFO train.py(579): new best mIoU: 0.2192 — saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_best_mIoU.pth
+INFO optimizer_loss.py(72): ==> warmup done, start to implement poly lr strategy
+INFO train.py(517): it: 90/1440, lr: 0.009888, loss: 4.6710, boundery_bce_loss: 0.1406, boundery_dice_loss: 0.8195, eta: 5:04:09, time: 996.4934
+INFO train.py(517): it: 108/1440, lr: 0.009769, loss: 4.4814, boundery_bce_loss: 0.1468, boundery_dice_loss: 0.8285, eta: 4:13:58, time: 20.9612
+INFO train.py(517): it: 126/1440, lr: 0.009651, loss: 4.6113, boundery_bce_loss: 0.1439, boundery_dice_loss: 0.8284, eta: 3:38:15, time: 21.6288
+INFO train.py(517): it: 144/1440, lr: 0.009532, loss: 4.4622, boundery_bce_loss: 0.1383, boundery_dice_loss: 0.8210, eta: 3:11:21, time: 21.0105
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 144, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter144_mIoU_0.1726.pth
+INFO train.py(581): current mIoU: 0.1726 — best so far: 0.2192
+INFO train.py(517): it: 162/1440, lr: 0.009413, loss: 4.1914, boundery_bce_loss: 0.1350, boundery_dice_loss: 0.8187, eta: 3:02:54, time: 115.6590
+INFO train.py(517): it: 180/1440, lr: 0.009293, loss: 4.2316, boundery_bce_loss: 0.1381, boundery_dice_loss: 0.8260, eta: 2:44:40, time: 21.1045
+INFO train.py(517): it: 198/1440, lr: 0.009174, loss: 4.4541, boundery_bce_loss: 0.1403, boundery_dice_loss: 0.8182, eta: 2:29:40, time: 20.7470
+INFO train.py(517): it: 216/1440, lr: 0.009054, loss: 4.0678, boundery_bce_loss: 0.1371, boundery_dice_loss: 0.8180, eta: 2:17:10, time: 21.1031
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 216, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter216_mIoU_0.3302.pth
+INFO train.py(579): new best mIoU: 0.3302 — saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_best_mIoU.pth
+INFO train.py(517): it: 234/1440, lr: 0.008934, loss: 4.0553, boundery_bce_loss: 0.1407, boundery_dice_loss: 0.8168, eta: 2:14:48, time: 116.8580
+INFO train.py(517): it: 252/1440, lr: 0.008814, loss: 4.0046, boundery_bce_loss: 0.1347, boundery_dice_loss: 0.8084, eta: 2:04:55, time: 21.0262
+INFO train.py(517): it: 270/1440, lr: 0.008694, loss: 4.0170, boundery_bce_loss: 0.1377, boundery_dice_loss: 0.8159, eta: 1:56:18, time: 20.7872
+INFO train.py(517): it: 288/1440, lr: 0.008574, loss: 4.0364, boundery_bce_loss: 0.1409, boundery_dice_loss: 0.8303, eta: 1:48:45, time: 21.0784
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 288, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter288_mIoU_0.3606.pth
+INFO train.py(579): new best mIoU: 0.3606 — saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_best_mIoU.pth
+INFO train.py(517): it: 306/1440, lr: 0.008453, loss: 3.9293, boundery_bce_loss: 0.1379, boundery_dice_loss: 0.8241, eta: 1:48:03, time: 118.1805
+INFO train.py(517): it: 324/1440, lr: 0.008332, loss: 3.8754, boundery_bce_loss: 0.1359, boundery_dice_loss: 0.8114, eta: 1:41:38, time: 21.1245
+INFO train.py(517): it: 342/1440, lr: 0.008211, loss: 3.8825, boundery_bce_loss: 0.1346, boundery_dice_loss: 0.8276, eta: 1:35:51, time: 21.0086
+INFO train.py(517): it: 360/1440, lr: 0.008090, loss: 4.1346, boundery_bce_loss: 0.1360, boundery_dice_loss: 0.8088, eta: 1:30:37, time: 21.2091
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 360, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter360_mIoU_0.3693.pth
+INFO train.py(579): new best mIoU: 0.3693 — saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_best_mIoU.pth
+INFO train.py(517): it: 378/1440, lr: 0.007969, loss: 3.9688, boundery_bce_loss: 0.1389, boundery_dice_loss: 0.8105, eta: 1:30:22, time: 117.3326
+INFO train.py(517): it: 396/1440, lr: 0.007847, loss: 3.7887, boundery_bce_loss: 0.1321, boundery_dice_loss: 0.8188, eta: 1:25:43, time: 21.1531
+INFO train.py(517): it: 414/1440, lr: 0.007726, loss: 3.9936, boundery_bce_loss: 0.1384, boundery_dice_loss: 0.8125, eta: 1:21:27, time: 21.0863
+INFO train.py(517): it: 432/1440, lr: 0.007604, loss: 3.7577, boundery_bce_loss: 0.1402, boundery_dice_loss: 0.8199, eta: 1:17:30, time: 21.2803
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 432, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter432_mIoU_0.3799.pth
+INFO train.py(579): new best mIoU: 0.3799 — saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_best_mIoU.pth
+INFO train.py(517): it: 450/1440, lr: 0.007482, loss: 3.7369, boundery_bce_loss: 0.1344, boundery_dice_loss: 0.8071, eta: 1:17:23, time: 117.4528
+INFO train.py(517): it: 468/1440, lr: 0.007359, loss: 3.7033, boundery_bce_loss: 0.1361, boundery_dice_loss: 0.8123, eta: 1:13:47, time: 20.8651
+INFO train.py(517): it: 486/1440, lr: 0.007236, loss: 3.7083, boundery_bce_loss: 0.1390, boundery_dice_loss: 0.8141, eta: 1:10:24, time: 20.5397
+INFO train.py(517): it: 504/1440, lr: 0.007114, loss: 3.8166, boundery_bce_loss: 0.1370, boundery_dice_loss: 0.8268, eta: 1:07:15, time: 20.9562
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 504, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter504_mIoU_0.3398.pth
+INFO train.py(581): current mIoU: 0.3398 — best so far: 0.3799
+INFO train.py(517): it: 522/1440, lr: 0.006990, loss: 3.8437, boundery_bce_loss: 0.1380, boundery_dice_loss: 0.8180, eta: 1:07:05, time: 115.9088
+INFO train.py(517): it: 540/1440, lr: 0.006867, loss: 3.8428, boundery_bce_loss: 0.1386, boundery_dice_loss: 0.8138, eta: 1:04:10, time: 20.9344
+INFO train.py(517): it: 558/1440, lr: 0.006744, loss: 3.7052, boundery_bce_loss: 0.1361, boundery_dice_loss: 0.8158, eta: 1:01:24, time: 20.7387
+INFO train.py(517): it: 576/1440, lr: 0.006620, loss: 3.6687, boundery_bce_loss: 0.1325, boundery_dice_loss: 0.8163, eta: 0:58:47, time: 21.1090
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 576, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter576_mIoU_0.4434.pth
+INFO train.py(579): new best mIoU: 0.4434 — saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_best_mIoU.pth
+INFO train.py(517): it: 594/1440, lr: 0.006496, loss: 3.6996, boundery_bce_loss: 0.1387, boundery_dice_loss: 0.8182, eta: 0:58:37, time: 117.4098
+INFO train.py(517): it: 612/1440, lr: 0.006371, loss: 3.6782, boundery_bce_loss: 0.1335, boundery_dice_loss: 0.8122, eta: 0:56:09, time: 21.0458
+INFO train.py(517): it: 630/1440, lr: 0.006247, loss: 3.7175, boundery_bce_loss: 0.1412, boundery_dice_loss: 0.8133, eta: 0:53:49, time: 20.9138
+INFO train.py(517): it: 648/1440, lr: 0.006122, loss: 3.6494, boundery_bce_loss: 0.1313, boundery_dice_loss: 0.8150, eta: 0:51:35, time: 20.9083
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 648, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter648_mIoU_0.4406.pth
+INFO train.py(581): current mIoU: 0.4406 — best so far: 0.4434
+INFO train.py(517): it: 666/1440, lr: 0.005996, loss: 3.6880, boundery_bce_loss: 0.1356, boundery_dice_loss: 0.8082, eta: 0:51:17, time: 115.4449
+INFO train.py(517): it: 684/1440, lr: 0.005871, loss: 3.6422, boundery_bce_loss: 0.1353, boundery_dice_loss: 0.8088, eta: 0:49:10, time: 20.9709
+INFO train.py(517): it: 702/1440, lr: 0.005745, loss: 3.6357, boundery_bce_loss: 0.1411, boundery_dice_loss: 0.8153, eta: 0:47:08, time: 20.9769
+INFO train.py(517): it: 720/1440, lr: 0.005619, loss: 3.6302, boundery_bce_loss: 0.1351, boundery_dice_loss: 0.8223, eta: 0:45:11, time: 20.9822
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 720, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter720_mIoU_0.4395.pth
+INFO train.py(581): current mIoU: 0.4395 — best so far: 0.4434
+INFO train.py(517): it: 738/1440, lr: 0.005493, loss: 3.4581, boundery_bce_loss: 0.1343, boundery_dice_loss: 0.8149, eta: 0:44:49, time: 115.6957
+INFO train.py(517): it: 756/1440, lr: 0.005366, loss: 3.5670, boundery_bce_loss: 0.1357, boundery_dice_loss: 0.8134, eta: 0:42:57, time: 21.1366
+INFO train.py(517): it: 774/1440, lr: 0.005239, loss: 3.5154, boundery_bce_loss: 0.1354, boundery_dice_loss: 0.8086, eta: 0:41:08, time: 20.7657
+INFO train.py(517): it: 792/1440, lr: 0.005111, loss: 3.5986, boundery_bce_loss: 0.1368, boundery_dice_loss: 0.8172, eta: 0:39:25, time: 21.1206
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 792, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter792_mIoU_0.4384.pth
+INFO train.py(581): current mIoU: 0.4384 — best so far: 0.4434
+INFO train.py(517): it: 810/1440, lr: 0.004984, loss: 3.5190, boundery_bce_loss: 0.1345, boundery_dice_loss: 0.7989, eta: 0:38:58, time: 115.6862
+INFO train.py(517): it: 828/1440, lr: 0.004856, loss: 3.5920, boundery_bce_loss: 0.1409, boundery_dice_loss: 0.8141, eta: 0:37:18, time: 21.1551
+INFO train.py(517): it: 846/1440, lr: 0.004727, loss: 3.5283, boundery_bce_loss: 0.1365, boundery_dice_loss: 0.8261, eta: 0:35:40, time: 20.9876
+INFO train.py(517): it: 864/1440, lr: 0.004598, loss: 3.5914, boundery_bce_loss: 0.1334, boundery_dice_loss: 0.8122, eta: 0:34:06, time: 20.7532
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 864, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter864_mIoU_0.4352.pth
+INFO train.py(581): current mIoU: 0.4352 — best so far: 0.4434
+INFO train.py(517): it: 882/1440, lr: 0.004469, loss: 3.5713, boundery_bce_loss: 0.1389, boundery_dice_loss: 0.8171, eta: 0:33:35, time: 116.0186
+INFO train.py(517): it: 900/1440, lr: 0.004339, loss: 3.4819, boundery_bce_loss: 0.1311, boundery_dice_loss: 0.8101, eta: 0:32:04, time: 20.8960
+INFO train.py(517): it: 918/1440, lr: 0.004209, loss: 3.4455, boundery_bce_loss: 0.1351, boundery_dice_loss: 0.8114, eta: 0:30:35, time: 20.9137
+INFO train.py(517): it: 936/1440, lr: 0.004078, loss: 3.4842, boundery_bce_loss: 0.1359, boundery_dice_loss: 0.8129, eta: 0:29:09, time: 21.0769
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 936, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter936_mIoU_0.4390.pth
+INFO train.py(581): current mIoU: 0.4390 — best so far: 0.4434
+INFO train.py(517): it: 954/1440, lr: 0.003947, loss: 3.3548, boundery_bce_loss: 0.1338, boundery_dice_loss: 0.8209, eta: 0:28:34, time: 115.7036
+INFO train.py(517): it: 972/1440, lr: 0.003816, loss: 3.4927, boundery_bce_loss: 0.1352, boundery_dice_loss: 0.8122, eta: 0:27:11, time: 21.2094
+INFO train.py(517): it: 990/1440, lr: 0.003684, loss: 3.4368, boundery_bce_loss: 0.1344, boundery_dice_loss: 0.8078, eta: 0:25:49, time: 20.8891
+INFO train.py(517): it: 1008/1440, lr: 0.003551, loss: 3.4824, boundery_bce_loss: 0.1355, boundery_dice_loss: 0.8093, eta: 0:24:30, time: 21.0989
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 1008, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter1008_mIoU_0.4379.pth
+INFO train.py(581): current mIoU: 0.4379 — best so far: 0.4434
+INFO train.py(517): it: 1026/1440, lr: 0.003418, loss: 3.4183, boundery_bce_loss: 0.1351, boundery_dice_loss: 0.8117, eta: 0:23:51, time: 115.8489
+INFO train.py(517): it: 1044/1440, lr: 0.003284, loss: 3.4267, boundery_bce_loss: 0.1403, boundery_dice_loss: 0.8187, eta: 0:22:33, time: 21.2176
+INFO train.py(517): it: 1062/1440, lr: 0.003150, loss: 3.3771, boundery_bce_loss: 0.1305, boundery_dice_loss: 0.8068, eta: 0:21:17, time: 20.7508
+INFO train.py(517): it: 1080/1440, lr: 0.003015, loss: 3.3719, boundery_bce_loss: 0.1376, boundery_dice_loss: 0.8106, eta: 0:20:03, time: 20.8758
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 1080, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter1080_mIoU_0.4249.pth
+INFO train.py(581): current mIoU: 0.4249 — best so far: 0.4434
+INFO train.py(517): it: 1098/1440, lr: 0.002879, loss: 3.3632, boundery_bce_loss: 0.1308, boundery_dice_loss: 0.8077, eta: 0:19:21, time: 116.1240
+INFO train.py(517): it: 1116/1440, lr: 0.002743, loss: 3.3628, boundery_bce_loss: 0.1391, boundery_dice_loss: 0.8126, eta: 0:18:08, time: 21.1910
+INFO train.py(517): it: 1134/1440, lr: 0.002606, loss: 3.4298, boundery_bce_loss: 0.1375, boundery_dice_loss: 0.8135, eta: 0:16:57, time: 20.7625
+INFO train.py(517): it: 1152/1440, lr: 0.002468, loss: 3.3533, boundery_bce_loss: 0.1305, boundery_dice_loss: 0.8145, eta: 0:15:48, time: 20.8805
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 1152, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter1152_mIoU_0.4632.pth
+INFO train.py(579): new best mIoU: 0.4632 — saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_best_mIoU.pth
+INFO train.py(517): it: 1170/1440, lr: 0.002329, loss: 3.4261, boundery_bce_loss: 0.1347, boundery_dice_loss: 0.8194, eta: 0:15:02, time: 117.5128
+INFO train.py(517): it: 1188/1440, lr: 0.002189, loss: 3.3823, boundery_bce_loss: 0.1383, boundery_dice_loss: 0.8148, eta: 0:13:54, time: 21.1032
+INFO train.py(517): it: 1206/1440, lr: 0.002049, loss: 3.3487, boundery_bce_loss: 0.1321, boundery_dice_loss: 0.8073, eta: 0:12:47, time: 20.7443
+INFO train.py(517): it: 1224/1440, lr: 0.001907, loss: 3.3952, boundery_bce_loss: 0.1367, boundery_dice_loss: 0.8046, eta: 0:11:42, time: 20.9261
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 1224, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter1224_mIoU_0.4329.pth
+INFO train.py(581): current mIoU: 0.4329 — best so far: 0.4632
+INFO train.py(517): it: 1242/1440, lr: 0.001764, loss: 3.3500, boundery_bce_loss: 0.1357, boundery_dice_loss: 0.8097, eta: 0:10:52, time: 114.2352
+INFO train.py(517): it: 1260/1440, lr: 0.001620, loss: 3.3510, boundery_bce_loss: 0.1327, boundery_dice_loss: 0.8060, eta: 0:09:48, time: 20.7580
+INFO train.py(517): it: 1278/1440, lr: 0.001474, loss: 3.3515, boundery_bce_loss: 0.1320, boundery_dice_loss: 0.8071, eta: 0:08:44, time: 20.7168
+INFO train.py(517): it: 1296/1440, lr: 0.001327, loss: 3.2764, boundery_bce_loss: 0.1413, boundery_dice_loss: 0.8222, eta: 0:07:42, time: 21.0134
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 1296, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter1296_mIoU_0.4540.pth
+INFO train.py(581): current mIoU: 0.4540 — best so far: 0.4632
+INFO train.py(517): it: 1314/1440, lr: 0.001177, loss: 3.3397, boundery_bce_loss: 0.1393, boundery_dice_loss: 0.8161, eta: 0:06:51, time: 115.8971
+INFO train.py(517): it: 1332/1440, lr: 0.001026, loss: 3.3092, boundery_bce_loss: 0.1349, boundery_dice_loss: 0.8168, eta: 0:05:49, time: 21.0382
+INFO train.py(517): it: 1350/1440, lr: 0.000872, loss: 3.2761, boundery_bce_loss: 0.1307, boundery_dice_loss: 0.8051, eta: 0:04:49, time: 20.8267
+INFO train.py(517): it: 1368/1440, lr: 0.000715, loss: 3.3299, boundery_bce_loss: 0.1335, boundery_dice_loss: 0.8111, eta: 0:03:50, time: 21.0096
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 1368, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter1368_mIoU_0.4559.pth
+INFO train.py(581): current mIoU: 0.4559 — best so far: 0.4632
+INFO train.py(517): it: 1386/1440, lr: 0.000554, loss: 3.3063, boundery_bce_loss: 0.1382, boundery_dice_loss: 0.8200, eta: 0:02:55, time: 115.8537
+INFO train.py(517): it: 1404/1440, lr: 0.000388, loss: 3.2928, boundery_bce_loss: 0.1288, boundery_dice_loss: 0.7956, eta: 0:01:57, time: 21.0962
+INFO train.py(517): it: 1422/1440, lr: 0.000213, loss: 3.2438, boundery_bce_loss: 0.1354, boundery_dice_loss: 0.8110, eta: 0:00:59, time: 20.9459
+INFO train.py(517): it: 1440/1440, lr: 0.000015, loss: 3.3603, boundery_bce_loss: 0.1365, boundery_dice_loss: 0.8182, eta: 0:00:03, time: 21.0236
+INFO train.py(526): evaluating the model ...
+INFO train.py(527): setup and restore model
+INFO train.py(532): compute the mIOU
+INFO train.py(552): training iteration 1440, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_iter1440_mIoU_0.4494.pth
+INFO train.py(581): current mIoU: 0.4494 — best so far: 0.4632
+INFO train.py(590): training done, model saved to: checkpoints/train_STDC1-Seg_aug4/pths/model_final.pth
